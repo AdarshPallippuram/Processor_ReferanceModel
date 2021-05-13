@@ -19,8 +19,15 @@
 #         return n
 
 
-c = '1'
-if c == '1':
-    print('done')
-else:
-    print('no')
+# c = '1'
+# if c == '1':
+#     print('done')
+# else:
+#     print('no')
+
+zvnc = ['0','0','0','0']
+Rn = -32768
+if Rn not in range(-32768,32768):
+        zvnc[1] = '1'
+
+print(zvnc)

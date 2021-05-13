@@ -22,6 +22,11 @@ def put_to_reg(inst,val):
 def get_from_reg(inst):
     return reg_bank[reg[inst[0:4]]][inst[4:]]
 
+def bit_wr(ureg,bit,val):                   # Bit writing function
+    l = list(reg_bank['0111'][ureg])
+    l[15-bit] = val
+    reg_bank['0111'][ureg] = ''.join(l)
+
 #--------------------------------------------------------
 # ALU DESIGN
 #--------------------------------------------------------
@@ -51,15 +56,28 @@ def addcsubb(Rn_ad,Rx_ad,Ry_ad,is_sub,C):
     CI = int(get_from_reg('01111100')[12])
     if is_sub == '1':
         if C == '1':
-            Rn = d_to_b(Rx - Ry + CI - 1)
+            Rn = Rx - Ry + CI - 1
         else:
-            Rn = d_to_b(Rx - Ry)
+            Rn = Rx - Ry
     else:
         if C == '1':
-            Rn = d_to_b(Rx + Ry + CI)
+            Rn = Rx + Ry + CI
         else:
-            Rn = d_to_b(Rx + Ry)
-    put_to_reg(Rn_ad,Rn)
+            Rn = Rx + Ry
+    Rn_b = d_to_b(Rn)
+    zvnc = ['0','0','0','0']
+    if Rn_b[0] == '1':                  # AN checking
+        zvnc[2] = '1'
+    if int(Rn_b,2) == 0:                # AZ checking
+        zvnc[0] = '1'
+    if Rn not in range(-32768,32768):   # AV checking
+        zvnc[1] = '1'
+    # Carry checking not done
+    bit_wr('0111',0,zvnc[0])            # AZ updating
+    bit_wr('0111',1,zvnc[1])            # AV updating
+    bit_wr('0111',2,zvnc[2])            # AN updating
+    bit_wr('0111',3,zvnc[3])            # AC updating
+    put_to_reg(Rn_ad,Rn_b)              # Rn reg updating
     
 
 def comp():
