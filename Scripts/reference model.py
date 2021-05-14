@@ -69,8 +69,8 @@ def astat_alu_wr(zvnc):
     bit_wr('0111',3,zvnc[3])            # AC updating
         
 def addcsubb(Rn_ad,Rx_ad,Ry_ad,is_sub,C):   # add, add with carry, sub, sub with borrow function
-    Rx = b_to_d(get_from_reg(Rx_ad))
-    Ry = b_to_d(get_from_reg(Ry_ad))
+    Rx = b_to_d(get_from_reg('0000'+Rx_ad))
+    Ry = b_to_d(get_from_reg('0000'+Ry_ad))
     CI = int(get_from_reg('01111100')[12])
     zvnc = ['0','0','0','0']
     if is_sub == '1':
@@ -95,12 +95,12 @@ def addcsubb(Rn_ad,Rx_ad,Ry_ad,is_sub,C):   # add, add with carry, sub, sub with
     if Rn not in range(-32768,32768):   # AV checking
         zvnc[1] = '1'
     astat_alu_wr(zvnc)
-    put_to_reg(Rn_ad,Rn_b)              # Rn reg updating
+    put_to_reg('0000'+Rn_ad,Rn_b)              # Rn reg updating
     
 
 def comp(Rx_ad,Ry_ad):
-    Rx = b_to_d(get_from_reg(Rx_ad))
-    Ry = b_to_d(get_from_reg(Ry_ad))
+    Rx = b_to_d(get_from_reg('0000'+Rx_ad))
+    Ry = b_to_d(get_from_reg('0000'+Ry_ad))
     zvnc = ['0','0','0','0']
     com = '0' 
     if Rx == Ry:
@@ -115,14 +115,14 @@ def comp(Rx_ad,Ry_ad):
     reg_bank['0111']['1100'] = sn       # ASTAT comp updated
 
 def minmax(Rn_ad,Rx_ad,Ry_ad,m):
-    Rx = b_to_d(get_from_reg(Rx_ad))
-    Ry = b_to_d(get_from_reg(Ry_ad))
+    Rx = b_to_d(get_from_reg('0000'+Rx_ad))
+    Ry = b_to_d(get_from_reg('0000'+Ry_ad))
     zvnc = ['0','0','0','0']
     if m == '1':
         Rn = max(Rx,Ry)
     else:
         Rn = min(Rx,Ry)
-    put_to_reg(Rn_ad,d_to_b(Rn))
+    put_to_reg('0000'+Rn_ad,d_to_b(Rn))
     if Rn == 0:
         zvnc[0] = '1'
     if Rn < 0:
@@ -130,7 +130,7 @@ def minmax(Rn_ad,Rx_ad,Ry_ad,m):
     astat_alu_wr(zvnc)
 
 def negate(Rn_ad,Rx_ad):
-    Rx = b_to_d(get_from_reg(Rx_ad))
+    Rx = b_to_d(get_from_reg('0000'+Rx_ad))
     zvnc = ['0','0','0','0']
     Rn = -Rx
     if Rn == 0:
@@ -144,8 +144,49 @@ def negate(Rn_ad,Rx_ad):
         if int(reg_bank['0111']['1011']) == 1:
             Rn = 32767
             zvnc[2] = '0'
-    put_to_reg(Rn_ad,d_to_b(Rn))
+    put_to_reg('0000'+Rn_ad,d_to_b(Rn))
     astat_alu_wr(zvnc)
+
+def absolute(Rn_ad,Rx_ad):
+    Rx = b_to_d(get_from_reg('0000'+Rx_ad))
+    if Rx < 0:
+        negate(Rn_ad,Rx_ad)
+    else:
+        put_to_reg('0000'+Rn_ad,d_to_b(Rx))
+        if Rx == 0:
+            zvnc = ['1','0','0','0']
+        else:
+            zvnc = ['0','0','0','0']
+        astat_alu_wr(zvnc)
+
+def logical(Rn_ad,Rx_ad,Ry_ad,op):
+    Rxb = get_from_reg('0000'+Rx_ad)
+    Rx = b_to_d(Rxb)
+    Rn = 0
+    if op[1] == '0':
+        Ry = b_to_d(get_from_reg('0000'+Ry_ad))
+        if op[4:] == '00':
+            Rn = Rx & Ry
+        elif op[4:] == '01':
+            Rn = Rx | Ry
+        else:
+            Rn = Rx ^ Ry
+    else:
+        if op[2] == '1':
+            Rn = Rx ^ (-1)
+        elif op[4:] == '00':
+            if '0' not in Rxb:
+                Rn = 1
+        else:
+            if '1' in Rxb:
+                Rn = 1
+    put_to_reg('0000'+Rn_ad,d_to_b(Rn))   
+    zvnc = ['0','0','0','0']
+    if Rn == 0:
+        zvnc[0] = '1'
+    if d_to_b(Rn)[0] == '1':
+        zvnc[2] = '1'
+    astat_alu_wr(zvnc) 
 
 def ALU(operation,Rn,Rx,Ry):
     process = {
@@ -157,13 +198,13 @@ def ALU(operation,Rn,Rx,Ry):
         '001001': minmax(Rn,Rx,Ry,operation[-2]),
         '001011': minmax(Rn,Rx,Ry,operation[-2]),
         '010001': negate(Rn,Rx),
-        '011001': ,
-        '100000': ,
-        '100001': ,
-        '100010': ,
-        '110000': ,
-        '110001': ,
-        '111000': 
+        '011001': absolute(Rn,Rx),
+        '100000': logical(Rn,Rx,Ry,operation),
+        '100001': logical(Rn,Rx,Ry,operation),
+        '100010': logical(Rn,Rx,Ry,operation),
+        '110000': logical(Rn,Rx,Ry,operation),
+        '110001': logical(Rn,Rx,Ry,operation),
+        '111000': logical(Rn,Rx,Ry,operation)
     }
     process[operation]
 
@@ -189,8 +230,8 @@ def prime_fun(oc):                  # oc - opcode
         time.sleep(10)
 
     elif int(oc[:8]) == 1:
-        print('rts')
-        # put_to_reg('01100011',get_from_reg('01100100'))
+        # print('rts')
+        put_to_reg('01100011',get_from_reg('01100100'))
         # deleting value in PCSTK not done
 
     elif int(oc[:8]) == 10:
