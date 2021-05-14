@@ -129,6 +129,24 @@ def minmax(Rn_ad,Rx_ad,Ry_ad,m):
         zvnc[2] = '1'
     astat_alu_wr(zvnc)
 
+def negate(Rn_ad,Rx_ad):
+    Rx = b_to_d(get_from_reg(Rx_ad))
+    zvnc = ['0','0','0','0']
+    Rn = -Rx
+    if Rn == 0:
+        zvnc[0] = '1'
+        zvnc[3] = '1'
+    if Rn < 0:
+        zvnc[2] = '1'
+    if Rn == 32768:
+        zvnc[1] = '1'
+        zvnc[2] = '1'
+        if int(reg_bank['0111']['1011']) == 1:
+            Rn = 32767
+            zvnc[2] = '0'
+    put_to_reg(Rn_ad,d_to_b(Rn))
+    astat_alu_wr(zvnc)
+
 def ALU(operation,Rn,Rx,Ry):
     process = {
         '000000': addcsubb(Rn,Rx,Ry,operation[-1],operation[-2]),
@@ -138,7 +156,7 @@ def ALU(operation,Rn,Rx,Ry):
         '000101': comp(Rx,Ry),
         '001001': minmax(Rn,Rx,Ry,operation[-2]),
         '001011': minmax(Rn,Rx,Ry,operation[-2]),
-        '010001': ,
+        '010001': negate(Rn,Rx),
         '011001': ,
         '100000': ,
         '100001': ,
