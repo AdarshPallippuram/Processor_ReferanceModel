@@ -94,6 +94,11 @@ def addcsubb(Rn_ad,Rx_ad,Ry_ad,is_sub,C):   # add, add with carry, sub, sub with
         zvnc[0] = '1'
     if Rn not in range(-32768,32768):   # AV checking
         zvnc[1] = '1'
+        if int(reg_bank['0111']['1011']) == 1:
+            if Rn < -32768:
+                Rn_b = d_to_b(-32768)
+            else:
+                Rn_b = d_to_b(32767)
     astat_alu_wr(zvnc)
     put_to_reg('0000'+Rn_ad,Rn_b)              # Rn reg updating
     
@@ -112,7 +117,7 @@ def comp(Rx_ad,Ry_ad):
     astat_alu_wr(zvnc)
     s = reg_bank['0111']['1100']
     sn = com + s[(15-15):(15-8)] + s[(15-7):]
-    reg_bank['0111']['1100'] = sn       # ASTAT comp updated
+    reg_bank['0111']['1100'] = sn       # ASTAT comp updating
 
 def minmax(Rn_ad,Rx_ad,Ry_ad,m):
     Rx = b_to_d(get_from_reg('0000'+Rx_ad))
