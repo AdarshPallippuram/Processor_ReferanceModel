@@ -66,25 +66,28 @@ def addcsubb(Rn_ad,Rx_ad,Ry_ad,is_sub,C):   # add, add with carry, sub, sub with
     Rx = b_to_d(get_from_reg(Rx_ad))
     Ry = b_to_d(get_from_reg(Ry_ad))
     CI = int(get_from_reg('01111100')[12])
+    zvnc = ['0','0','0','0']
     if is_sub == '1':
         if C == '1':
             Rn = Rx - Ry + CI - 1
+            zvnc[3] = is_AC(Rx,-Ry,CI,-1)   # AC checking
         else:
             Rn = Rx - Ry
+            zvnc[3] = is_AC(Rx,-Ry,0,0)     # AC checking
     else:
         if C == '1':
             Rn = Rx + Ry + CI
+            zvnc[3] = is_AC(Rx,Ry,CI,0)     # AC checking
         else:
             Rn = Rx + Ry
+            zvnc[3] = is_AC(Rx,Ry,0,0)      # AC checking
     Rn_b = d_to_b(Rn)                    
-    zvnc = ['0','0','0','0']
     if Rn_b[0] == '1':                  # AN checking
         zvnc[2] = '1'
     if int(Rn_b,2) == 0:                # AZ checking
         zvnc[0] = '1'
     if Rn not in range(-32768,32768):   # AV checking
         zvnc[1] = '1'
-    zvnc[3] = is_AC(Rx,Ry,CI,-(int(is_sub)&int(C)))     # AC checking
     bit_wr('0111',0,zvnc[0])            # AZ updating
     bit_wr('0111',1,zvnc[1])            # AV updating
     bit_wr('0111',2,zvnc[2])            # AN updating
