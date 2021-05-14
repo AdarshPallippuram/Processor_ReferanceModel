@@ -3,11 +3,11 @@
 #--------------------------------------------------------
 
 reg_bank={
-    "R":{"0000":"","0001":"","0010":"","0011":"","0100":"","0101":"","0110":"","0111":"","1000":"","1001":"","1010":"","1011":"","1100":"","1101":"","1110":"","1111":""},
+    "R":{"0000":"0000000000000000","0001":"0000000000000000","0010":"0000000000000000","0011":"0000000000000000","0100":"0000000000000000","0101":"0000000000000000","0110":"0000000000000000","0111":"0000000000000000","1000":"0000000000000000","1001":"0000000000000000","1010":"0000000000000000","1011":"0000000000000000","1100":"0000000000000000","1101":"0000000000000000","1110":"0000000000000000","1111":"0000000000000000"},
     "I":{"0000":"","0001":"","0010":"","0011":"","0100":"","0101":"","0110":"","0111":"","1000":"","1001":"","1010":"","1011":"","1100":"","1101":"","1110":"","1111":""},
     "M":{"0000":"","0001":"","0010":"","0011":"","0100":"","0101":"","0110":"","0111":"","1000":"","1001":"","1010":"","1011":"","1100":"","1101":"","1110":"","1111":""},
     "0110":{"0000":"","0001":"","0011":"","0100":"","0101":""},
-    "0111":{"1011":"","1100":"","1110":""}
+    "0111":{"1011":"0000000000000000","1100":"0000000000000000","1110":"0000000000000000"}
 }
 reg={
     "0000":"R",
@@ -50,6 +50,8 @@ def d_to_b(d):                          # Function converts decimal(d) to binary
     else:
         return n
 
+#--------------------------------------------------------
+
 def is_AC(x,y,c,b):                     # Function checking for AC (ALU Carry)
 	if x < 0:
 		x = 65536 + x
@@ -63,11 +65,13 @@ def is_AC(x,y,c,b):                     # Function checking for AC (ALU Carry)
 		return '0'
 
 def astat_alu_wr(zvnc):
-    bit_wr('0111',0,zvnc[0])            # AZ updating
-    bit_wr('0111',1,zvnc[1])            # AV updating
-    bit_wr('0111',2,zvnc[2])            # AN updating
-    bit_wr('0111',3,zvnc[3])            # AC updating
-        
+    bit_wr('1100',0,zvnc[0])            # AZ updating
+    bit_wr('1100',1,zvnc[1])            # AV updating
+    bit_wr('1100',2,zvnc[2])            # AN updating
+    bit_wr('1100',3,zvnc[3])            # AC updating
+
+#--------------------------------------------------------     
+   
 def addcsubb(Rn_ad,Rx_ad,Ry_ad,is_sub,C):   # add, add with carry, sub, sub with borrow function
     Rx = b_to_d(get_from_reg('0000'+Rx_ad))
     Ry = b_to_d(get_from_reg('0000'+Ry_ad))
@@ -101,7 +105,8 @@ def addcsubb(Rn_ad,Rx_ad,Ry_ad,is_sub,C):   # add, add with carry, sub, sub with
                 Rn_b = d_to_b(32767)
     astat_alu_wr(zvnc)
     put_to_reg('0000'+Rn_ad,Rn_b)              # Rn reg updating
-    
+
+#--------------------------------------------------------    
 
 def comp(Rx_ad,Ry_ad):
     Rx = b_to_d(get_from_reg('0000'+Rx_ad))
@@ -119,6 +124,8 @@ def comp(Rx_ad,Ry_ad):
     sn = com + s[(15-15):(15-8)] + s[(15-7):]
     reg_bank['0111']['1100'] = sn       # ASTAT comp updating
 
+#--------------------------------------------------------
+
 def minmax(Rn_ad,Rx_ad,Ry_ad,m):
     Rx = b_to_d(get_from_reg('0000'+Rx_ad))
     Ry = b_to_d(get_from_reg('0000'+Ry_ad))
@@ -133,6 +140,8 @@ def minmax(Rn_ad,Rx_ad,Ry_ad,m):
     if Rn < 0:
         zvnc[2] = '1'
     astat_alu_wr(zvnc)
+
+#--------------------------------------------------------
 
 def negate(Rn_ad,Rx_ad):
     Rx = b_to_d(get_from_reg('0000'+Rx_ad))
@@ -152,6 +161,8 @@ def negate(Rn_ad,Rx_ad):
     put_to_reg('0000'+Rn_ad,d_to_b(Rn))
     astat_alu_wr(zvnc)
 
+#--------------------------------------------------------
+
 def absolute(Rn_ad,Rx_ad):
     Rx = b_to_d(get_from_reg('0000'+Rx_ad))
     if Rx < 0:
@@ -163,6 +174,8 @@ def absolute(Rn_ad,Rx_ad):
         else:
             zvnc = ['0','0','0','0']
         astat_alu_wr(zvnc)
+
+#--------------------------------------------------------
 
 def logical(Rn_ad,Rx_ad,Ry_ad,op):
     Rxb = get_from_reg('0000'+Rx_ad)
@@ -193,25 +206,39 @@ def logical(Rn_ad,Rx_ad,Ry_ad,op):
         zvnc[2] = '1'
     astat_alu_wr(zvnc) 
 
+#--------------------------------------------------------
+
 def ALU(operation,Rn,Rx,Ry):
     process = {
-        '000000': addcsubb(Rn,Rx,Ry,operation[-1],operation[-2]),
-        '000001': addcsubb(Rn,Rx,Ry,operation[-1],operation[-2]),
-        '000010': addcsubb(Rn,Rx,Ry,operation[-1],operation[-2]),
-        '000011': addcsubb(Rn,Rx,Ry,operation[-1],operation[-2]),
-        '000101': comp(Rx,Ry),
-        '001001': minmax(Rn,Rx,Ry,operation[-2]),
-        '001011': minmax(Rn,Rx,Ry,operation[-2]),
-        '010001': negate(Rn,Rx),
-        '011001': absolute(Rn,Rx),
-        '100000': logical(Rn,Rx,Ry,operation),
-        '100001': logical(Rn,Rx,Ry,operation),
-        '100010': logical(Rn,Rx,Ry,operation),
-        '110000': logical(Rn,Rx,Ry,operation),
-        '110001': logical(Rn,Rx,Ry,operation),
-        '111000': logical(Rn,Rx,Ry,operation)
+        '000000': 0,
+        '000001': 0,
+        '000010': 0,
+        '000011': 0,
+        '000101': 1,
+        '001001': 2,
+        '001011': 2,
+        '010001': 3,
+        '011001': 4,
+        '100000': 5,
+        '100001': 5,
+        '100010': 5,
+        '110000': 5,
+        '110001': 5,
+        '111000': 5
     }
-    process[operation]
+
+    if process[operation] == 0:
+        return addcsubb(Rn,Rx,Ry,operation[-1],operation[-2])
+    elif process[operation] == 1:
+        return comp(Rx,Ry)
+    elif process[operation] == 2:
+        return minmax(Rn,Rx,Ry,operation[-2])
+    elif process[operation] == 3:
+        return negate(Rn,Rx)
+    elif process[operation] == 4:
+        return absolute(Rn,Rx)
+    elif process[operation] == 5:
+        return logical(Rn,Rx,Ry,operation)
 
 #--------------------------------------------------------
 # Primary division of opcode
@@ -220,12 +247,6 @@ def ALU(operation,Rn,Rx,Ry):
 import time
 def prime_fun(oc):                  # oc - opcode
     
-    cu = {                          # cu - compute unit
-        '00':ALU(oc[(31-22):(31-16)], oc[(31-16):(31-12)], oc[(31-12):(31-8)], oc[(31-8):(31-4)]),
-        '01':'MUL',
-        '10':'SHIFTER'
-    }
-
     if int(oc) == 0:
         # print('nop')
         time.sleep(3)
@@ -250,29 +271,50 @@ def prime_fun(oc):                  # oc - opcode
 
     elif int(oc[:6]) == 11:
         #print('immediate data(16-bits) -> ureg')
-        put_to_reg(oc[8:16],oc[16:])
+        put_to_reg(oc[8:16],oc[16:32])
         # print(oc[8:16],get_from_reg(oc[8:16]))
 
-    elif int(oc[:6]) == 1:
+    elif int(oc[1:6]) == 1:
         # print('IF condition ureg1 = ureg2')
         # ureg1 as 'dest' and ureg2 as 'source'
         put_to_reg(oc[8:16],get_from_reg(oc[16:23]))
     
-    elif int(oc[:6]) == 1001:
+    elif int(oc[1:6]) == 1001:
         print('IF condition DM(Ia,Mb) <-> ureg')
     
-    elif int(oc[:6]) == 1000:
+    elif int(oc[1:6]) == 1000:
         print('IF condition modify (Ia,Mb)')
     
-    elif int(oc[:6]) == 1100:
+    elif int(oc[1:6]) == 1100:
         print('IF condition JUMP (Md,Ic)')
     
-    elif int(oc[:6]) == 1101:
+    elif int(oc[1:6]) == 1101:
         print('IF condition JUMPR (Md,Ic)')
 
     elif int(oc[1]) == 1:
         # print('IF condition compute')
-        cu[oc[6:8]]
-        
-    
-prime_fun('00001100011001001010101010101010')
+        if oc[6:8] == '00':
+            ALU(oc[(31-22):(31-16)], oc[(31-16):(31-12)], oc[(31-12):(31-8)], oc[(31-8):(31-4)])
+        elif oc[6:8] == '01':
+            print('MUL')
+        else:
+            print('SHIFT')
+#--------------------------------------------------------  
+
+f1 = open('initial.txt')
+for l in f1:
+    prime_fun(l)
+print()
+print('R :',reg_bank['R'])
+print()
+print('Flags :',reg_bank['0111'])
+print()
+print('Initialized..................................................')
+print()
+f2 = open('opcode.txt')
+for l in f2:
+    prime_fun(l)
+print('R :',reg_bank['R'])
+print()
+print('Flags :',reg_bank['0111'])
+print()

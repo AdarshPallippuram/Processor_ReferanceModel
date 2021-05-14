@@ -35,21 +35,21 @@ def prime_fun(oc):                  # oc - opcode
         put_to_reg(oc[8:16],oc[16:])
         # print(oc[8:16],get_from_reg(oc[8:16]))
 
-    elif int(oc[:6]) == 1:
+    elif int(oc[1:6]) == 1:
         # print('IF condition ureg1 = ureg2')
         # ureg1 as 'dest' and ureg2 as 'source'
         put_to_reg(oc[8:16],get_from_reg(oc[16:23]))
     
-    elif int(oc[:6]) == 1001:
+    elif int(oc[1:6]) == 1001:
         print('IF condition DM(Ia,Mb) <-> ureg')
     
-    elif int(oc[:6]) == 1000:
+    elif int(oc[1:6]) == 1000:
         print('IF condition modify (Ia,Mb)')
     
-    elif int(oc[:6]) == 1100:
+    elif int(oc[1:6]) == 1100:
         print('IF condition JUMP (Md,Ic)')
     
-    elif int(oc[:6]) == 1101:
+    elif int(oc[1:6]) == 1101:
         print('IF condition JUMPR (Md,Ic)')
 
     elif int(oc[1]) == 1:
