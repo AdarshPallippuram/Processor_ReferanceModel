@@ -1,6 +1,8 @@
 import Register
 def shifter(inst):
     R=["0000"+inst[6:10],"0000"+inst[10:14]]
+    sz="0"
+    sv="0"
     if(inst[1]=="0"):
         R.append("0000"+inst[14:])
     R_val=[]
@@ -16,7 +18,11 @@ def shifter(inst):
             shift=int(R_val[1][1:],2)
             R_val[0]=format(int(R_val[0],2)*(2**(shift+1)),"016b")
             R_val[0]=R_val[0][-17:-1]
-            Register.put_to_reg(R[0],R_val[0])
+            if(shift>0):
+                sv="1"
+        Register.put_to_reg(R[0],R_val[0])
+        if(int(R_val[0],2)==0):
+            sz="1"
     elif(inst[1:3]=="01"):
         if(R_val[1][0]=="1"):
             print("!!")
@@ -33,12 +39,27 @@ def shifter(inst):
             Register.put_to_reg(R[0],R_val[0][shift:]+R_val[0][0:shift])
             print(Register.get_from_reg(R[1]))
             print(Register.get_from_reg(R[0]))
+        if(int(R_val[0],2)==0):
+            sz="1"
     elif(inst[1:3]=="10"):
-        Register.put_to_reg(R[0],Register.int_to_hex(len(R_val[0].split("1")[0])))
+        val=format(len(R_val[0].split("1")[0]),"016b")
+        Register.put_to_reg(R[0],val)
         print(Register.get_from_reg(R[0]))
+        if(R_val[0][0]=="1"):
+            sz="1"
+        if(int(val,2)==32):
+            sv="0"
     elif(inst[1:3]=="11"):
-        Register.put_to_reg(R[0],Register.int_to_hex(len(R_val[0].split("0")[0])))
+        val=format(len(R_val[0].split("0")[0]),"016b")
+        Register.put_to_reg(R[0],val)
         print(Register.get_from_reg(R[0]))
+        if(R_val[0][0]=="0"):
+            sz="1"
+        if(int(val,2)==32):
+            sv="0"
+    flag=Register.get_from_reg("01111100")
+    Register.put_to_reg("01111100",flag[:8]+sz+sv+flag[10:])
+    print(Register.get_from_reg("01111100"))
 x=input()
 while(x!="#"):
     shifter(x)
