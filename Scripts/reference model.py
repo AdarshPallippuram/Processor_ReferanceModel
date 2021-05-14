@@ -31,26 +31,38 @@ def bit_wr(ureg,bit,val):                   # Bit writing function
 # ALU DESIGN
 #--------------------------------------------------------
 
-def twos_cmpl(n):
+def twos_cmpl(n):                       # Function to obtain 2's compliment (binary str i/p)
     N = int(n,2)^int('ffff',16)
     return '{:>16b}'.format(N+1)[-16:]
 
-def b_to_d(b):
+def b_to_d(b):                          # Function converts binary(b) to decimal(d)
     if b[0] == '1':
         n = twos_cmpl(b)
         return -int(n,2)
     else:
         return int(b,2)
 
-def d_to_b(d):
+def d_to_b(d):                          # Function converts decimal(d) to binary(b)
     N = abs(d)
     n = '{:>016b}'.format(N)
     if d < 0:
         return twos_cmpl(n)
     else:
         return n
+
+def is_AC(x,y,c,b):                     # Function checking for AC (ALU Carry)
+	if x < 0:
+		x = 65536 + x
+	if y < 0:
+		y = 65536 + y
+	if b == -1:
+		b = 65535
+	if x + y + c + b > 65535:
+		return '1'
+	else:
+		return '0'
         
-def addcsubb(Rn_ad,Rx_ad,Ry_ad,is_sub,C):
+def addcsubb(Rn_ad,Rx_ad,Ry_ad,is_sub,C):   # add, add with carry, sub, sub with borrow function
     Rx = b_to_d(get_from_reg(Rx_ad))
     Ry = b_to_d(get_from_reg(Ry_ad))
     CI = int(get_from_reg('01111100')[12])
@@ -64,7 +76,7 @@ def addcsubb(Rn_ad,Rx_ad,Ry_ad,is_sub,C):
             Rn = Rx + Ry + CI
         else:
             Rn = Rx + Ry
-    Rn_b = d_to_b(Rn)
+    Rn_b = d_to_b(Rn)                    
     zvnc = ['0','0','0','0']
     if Rn_b[0] == '1':                  # AN checking
         zvnc[2] = '1'
@@ -72,7 +84,7 @@ def addcsubb(Rn_ad,Rx_ad,Ry_ad,is_sub,C):
         zvnc[0] = '1'
     if Rn not in range(-32768,32768):   # AV checking
         zvnc[1] = '1'
-    # Carry checking not done
+    zvnc[3] = is_AC(Rx,Ry,CI,-(int(is_sub)&int(C)))     # AC checking
     bit_wr('0111',0,zvnc[0])            # AZ updating
     bit_wr('0111',1,zvnc[1])            # AV updating
     bit_wr('0111',2,zvnc[2])            # AN updating
