@@ -33,19 +33,25 @@
 # print(zvnc)
 #---------------------------------------------------------
 
-def is_AC(x,y,c,b):
-	if x < 0:
-		x = 65536 + x
-	if y < 0:
-		y = 65536 + y
-	if b == -1:
-		b = 65535
-	if x + y + c + b > 65535:
-		return '1'
-	else:
-		return '0'
-is_sub = '0'
-C = '1'
-print(is_AC(0,0,1,-(int(is_sub)&int(C))))
+# def is_AC(x,y,c,b):
+# 	if x < 0:
+# 		x = 65536 + x
+# 	if y < 0:
+# 		y = 65536 + y
+# 	if b == -1:
+# 		b = 65535
+# 	if x + y + c + b > 65535:
+# 		return '1'
+# 	else:
+# 		return '0'
+# is_sub = '0'
+# C = '1'
+# print(is_AC(0,0,1,-(int(is_sub)&int(C))))
+#---------------------------------------------------------
+
+s = '1010101001100111'
+sn = '0' + s[(15-15):(15-8)] + s[(15-7):]
+print(s)
+print(sn)
 
 

@@ -61,6 +61,12 @@ def is_AC(x,y,c,b):                     # Function checking for AC (ALU Carry)
 		return '1'
 	else:
 		return '0'
+
+def astat_alu_wr(zvnc):
+    bit_wr('0111',0,zvnc[0])            # AZ updating
+    bit_wr('0111',1,zvnc[1])            # AV updating
+    bit_wr('0111',2,zvnc[2])            # AN updating
+    bit_wr('0111',3,zvnc[3])            # AC updating
         
 def addcsubb(Rn_ad,Rx_ad,Ry_ad,is_sub,C):   # add, add with carry, sub, sub with borrow function
     Rx = b_to_d(get_from_reg(Rx_ad))
@@ -88,15 +94,40 @@ def addcsubb(Rn_ad,Rx_ad,Ry_ad,is_sub,C):   # add, add with carry, sub, sub with
         zvnc[0] = '1'
     if Rn not in range(-32768,32768):   # AV checking
         zvnc[1] = '1'
-    bit_wr('0111',0,zvnc[0])            # AZ updating
-    bit_wr('0111',1,zvnc[1])            # AV updating
-    bit_wr('0111',2,zvnc[2])            # AN updating
-    bit_wr('0111',3,zvnc[3])            # AC updating
+    astat_alu_wr(zvnc)
     put_to_reg(Rn_ad,Rn_b)              # Rn reg updating
     
 
-def comp():
-    
+def comp(Rx_ad,Ry_ad):
+    Rx = b_to_d(get_from_reg(Rx_ad))
+    Ry = b_to_d(get_from_reg(Ry_ad))
+    zvnc = ['0','0','0','0']
+    com = '0' 
+    if Rx == Ry:
+        zvnc[0] = '1'
+    elif Rx < Ry:
+        zvnc[2] = '1'
+    else:
+        com = '1'
+    astat_alu_wr(zvnc)
+    s = reg_bank['0111']['1100']
+    sn = com + s[(15-15):(15-8)] + s[(15-7):]
+    reg_bank['0111']['1100'] = sn       # ASTAT comp updated
+
+def minmax(Rn_ad,Rx_ad,Ry_ad,m):
+    Rx = b_to_d(get_from_reg(Rx_ad))
+    Ry = b_to_d(get_from_reg(Ry_ad))
+    zvnc = ['0','0','0','0']
+    if m == '1':
+        Rn = max(Rx,Ry)
+    else:
+        Rn = min(Rx,Ry)
+    put_to_reg(Rn_ad,d_to_b(Rn))
+    if Rn == 0:
+        zvnc[0] = '1'
+    if Rn < 0:
+        zvnc[2] = '1'
+    astat_alu_wr(zvnc)
 
 def ALU(operation,Rn,Rx,Ry):
     process = {
@@ -104,9 +135,9 @@ def ALU(operation,Rn,Rx,Ry):
         '000001': addcsubb(Rn,Rx,Ry,operation[-1],operation[-2]),
         '000010': addcsubb(Rn,Rx,Ry,operation[-1],operation[-2]),
         '000011': addcsubb(Rn,Rx,Ry,operation[-1],operation[-2]),
-        '000101': comp(),
-        '001001': ,
-        '001011': ,
+        '000101': comp(Rx,Ry),
+        '001001': minmax(Rn,Rx,Ry,operation[-2]),
+        '001011': minmax(Rn,Rx,Ry,operation[-2]),
         '010001': ,
         '011001': ,
         '100000': ,
@@ -116,11 +147,7 @@ def ALU(operation,Rn,Rx,Ry):
         '110001': ,
         '111000': 
     }
-    if cond == 0:
-        
-    else:
-        print('conditional')
-
+    process[operation]
 
 #--------------------------------------------------------
 # Primary division of opcode
@@ -130,7 +157,7 @@ import time
 def prime_fun(oc):                  # oc - opcode
     
     cu = {                          # cu - compute unit
-        '00':ALU(),
+        '00':ALU(oc[(31-22):(31-16)], oc[(31-16):(31-12)], oc[(31-12):(31-8)], oc[(31-8):(31-4)]),
         '01':'MUL',
         '10':'SHIFTER'
     }
