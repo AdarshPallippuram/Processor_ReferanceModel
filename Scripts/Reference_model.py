@@ -64,7 +64,7 @@ def primary(OpCode):                  # OpCode - opcode
 
 b='opcode.txt'
 f=open(b,"rt")
-z=input("Enter name of register dump file:")
+z= r'C:\Users\alanm\OneDrive\Desktop\VS_code\Processor_ReferanceModel\ALU test files\dump files\d'+Final_Assembler.xyz+'.txt'
 g=open(z,"wt")
 l=[]
 for i in f:

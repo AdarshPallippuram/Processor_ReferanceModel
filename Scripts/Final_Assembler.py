@@ -264,6 +264,8 @@ def clear():
     else:
         _=system("clear")
 a=input("Enter name of file containing instructions:")
+xyzl = re.split("in", a)
+xyz = xyzl[-1].replace('.txt','')
 g=open(a,"rt")
 b='opcode.txt'
 f=open(b,"wt")
