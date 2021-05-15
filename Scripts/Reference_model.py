@@ -78,7 +78,10 @@ for i in range(3):
     a=format(i,"04b")
     for j in range(16):
         b=format(j,"04b")
-        g.write("{}{} : {}".format(Register.reg[a],j,Register.reg_bank[Register.reg[a]][b]))
+        try:
+            g.write("{}{} : {}".format(Register.reg[a],j,Register.ubin_to_hex(Register.reg_bank[Register.reg[a]][b])))
+        except:
+            g.write("{}{} : {}".format(Register.reg[a],j,Register.reg_bank[Register.reg[a]][b]))
         g.write("\n")
 for i in Register.reg_name.keys():
     g.write("{} : {}".format(i,Register.reg_bank[Register.reg_name[i][0:4]][Register.reg_name[i][4:]]))
