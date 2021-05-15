@@ -60,7 +60,3 @@ def shifter(inst):
     flag=Register.get_from_reg("01111100")
     Register.put_to_reg("01111100",flag[:8]+sz+sv+flag[10:])
     print(Register.get_from_reg("01111100"))
-x=input()
-while(x!="#"):
-    shifter(x)
-    x=input()

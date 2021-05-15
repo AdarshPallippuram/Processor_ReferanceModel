@@ -265,7 +265,7 @@ def clear():
         _=system("clear")
 a=input("Enter name of file containing instructions:")
 g=open(a,"rt")
-b=input("Enter name of OpCode Destination file:")
+b='opcode.txt'
 f=open(b,"wt")
 l=[]
 rewrite=False
