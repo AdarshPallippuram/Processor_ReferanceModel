@@ -159,6 +159,34 @@ def primary(OpCode):
             shifter(OpCode[9:27])
 
 #---------------------------------------------------------------------------
+# Condition
+#---------------------------------------------------------------------------
+
+def condition(a):
+    ASTAT=get_from_reg("01111100")
+    if(a[2:]=="111"):
+        val=1
+    elif(a[1:]=="0000"):
+        val=int(a[0])^int(ASTAT[-1])
+    elif(a[1:]=="0001"):
+        val=int(a[0])^int(ASTAT[13])
+    elif(a[1:]=="0010"):
+        val=int(a[0])^(int(ASTAT[13])|int(ASTAT[-1]))
+    elif(a[1:]=="0011"):
+        val=int(a[0])^int(ASTAT[12])
+    elif(a[1:]=="0100"):
+        val=int(a[0])^int(ASTAT[14])
+    elif(a[1:]=="1000"):
+        val=int(a[0])^int(ASTAT[10])
+    elif(a[1:]=="1001"):
+        val=int(a[0])^int(ASTAT[11])
+    elif(a[1:]=="1010"):
+        val=int(a[0])^int(ASTAT[9])
+    elif(a[1:]=="1011"):
+        val=int(a[0])^int(ASTAT[8])
+    return val
+
+#---------------------------------------------------------------------------
 # Main Function
 #---------------------------------------------------------------------------
 
@@ -172,8 +200,12 @@ for i in f:
     l.append(i.strip("\n"))
 i=0
 while(i<len(l)):
-    #ADD Conditions
-    primary(l[i])
+    if(l[i][0]=="0"):
+        s=1
+    else:
+        s=condition(l[i][27:])
+    if(s==1):
+        primary(l[i])
     i=i+1
 for i in range(3):
     a=format(i,"04b")
