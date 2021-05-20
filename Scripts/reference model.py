@@ -274,6 +274,8 @@ def ALU(operation,Rn,Rx,Ry):
 # Multiplier
 #---------------------------------------------------------------------------
 
+
+
 #---------------------------------------------------------------------------
 # Shifter
 #---------------------------------------------------------------------------
@@ -330,7 +332,7 @@ def shifter(inst):
     put_to_reg("01111100",flag[:8]+sz+sv+flag[10:])
 
 #---------------------------------------------------------------------------
-# Primarry Classification
+# Primary Classification
 #---------------------------------------------------------------------------
 
 def primary(OpCode):
@@ -368,16 +370,20 @@ def primary(OpCode):
         h=open(path+_b+"/dm_file.txt","rt")
         if(OpCode[25]=="1"):
             #print("write to dm")
-            ureg_data=format(int(get_from_reg(OpCode[8:16]),2),"04x")
-            i=open(path+_b+"/dm_file2.txt","wt")
-            for j in h:
-                if (i_data in j):
-                    j=i_data+"\t"+ureg_data+"\n"
-                i.write(j)
-            h.close()
-            i.close()
-            os.remove(path+_b+"/dm_file.txt")
-            os.rename(path+_b+"/dm_file2.txt",path+_b+"/dm_file.txt")
+            ureg_data=get_from_reg(OpCode[8:16])
+            if(ureg_data!="XXXX"):
+                ureg_data=format(int(ureg_data,2),"04x")
+                i=open(path+_b+"/dm_file2.txt","wt")
+                for j in h:
+                    if (i_data in j):
+                        j=i_data+"\t"+ureg_data+"\n"
+                    i.write(j)
+                h.close()
+                i.close()
+                os.remove(path+_b+"/dm_file.txt")
+                os.rename(path+_b+"/dm_file2.txt",path+_b+"/dm_file.txt")
+            if(not h.closed):
+                h.close()
         else:
             #print("Read from Dm")
             for j in h:
