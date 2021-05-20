@@ -1,15 +1,24 @@
+# if the test data of register dump is in the format <addr><\t><data>, then change the condition of if statement in 
+# line 266 to if(i!=j)
+# The file opening logic has been written keeping into consideration that the test files have the format
+# - a1 - left shift                     //This is the parent folder
+#   - a_p1.txt                          //Holds the instructions
+#   - a1.txt                            //Holds the data memory output
+# The path is defined such that no change needs to be made there. The tesing files should be put in their own folders
+# inside a "Test" folder, i.e a1 - left shift is inside a folder "Test" in the script directory
+import os
 import time
-
+path=os.path.dirname(__file__)+"/Test/"          
 #---------------------------------------------------------------------------
 # Reg banks, uregs and related dictionaries and functions
 #---------------------------------------------------------------------------
 
 reg_bank={
-    "R":{"0000":"0000000000000010","0001":"0111000010101010","0010":"0000000000010000","0011":"1111111011111101","0100":"XXXX","0101":"XXXX","0110":"XXXX","0111":"XXXX","1000":"XXXX","1001":"XXXX","1010":"XXXX","1011":"XXXX","1100":"XXXX","1101":"XXXX","1110":"XXXX","1111":"XXXX"},
+    "R":{"0000":"XXXX","0001":"XXXX","0010":"XXXX","0011":"XXXX","0100":"XXXX","0101":"XXXX","0110":"XXXX","0111":"XXXX","1000":"XXXX","1001":"XXXX","1010":"XXXX","1011":"XXXX","1100":"XXXX","1101":"XXXX","1110":"XXXX","1111":"XXXX"},
     "I":{"0000":"XXXX","0001":"XXXX","0010":"XXXX","0011":"XXXX","0100":"XXXX","0101":"XXXX","0110":"XXXX","0111":"XXXX","1000":"XXXX","1001":"XXXX","1010":"XXXX","1011":"XXXX","1100":"XXXX","1101":"XXXX","1110":"XXXX","1111":"XXXX"},
     "M":{"0000":"XXXX","0001":"XXXX","0010":"XXXX","0011":"XXXX","0100":"XXXX","0101":"XXXX","0110":"XXXX","0111":"XXXX","1000":"XXXX","1001":"XXXX","1010":"XXXX","1011":"XXXX","1100":"XXXX","1101":"XXXX","1110":"XXXX","1111":"XXXX"},
-    "0110":{"0000":"XXXX","0001":"XXXX","0011":"XXXX","0100":"XXXX","0101":"XXXX"},
-    "0111":{"1011":"XXXX","1100":"0000000000000000","1110":"XXXX"}
+    "0110":{"0000":"0000000000000000","0001":"0000000000000000","0011":"0000000000000000","0100":"0000000000000000","0101":"0000000000000000"},
+    "0111":{"1011":"0000000000000000","1100":"0000000000000000","1110":"0000000000000000"}
 }
 reg={
     "0000":"R",
@@ -72,7 +81,8 @@ def shifter(inst):
     if(inst[1:3]=="00"):
         if(R_val[1][0]=="1"):
             shift=compliment(R_val[1])
-            R_val[0]=format(int(R_val[0],2)//(2**shift),"016b")
+            R_val[0]=R_val[0][0]*shift+R_val[0]
+            R_val[0]=R_val[0][0:16]
         else:
             shift=int(R_val[1][1:],2)
             R_val[0]=format(int(R_val[0],2)*(2**(shift+1)),"016b")
@@ -141,10 +151,37 @@ def primary(OpCode):
         # ureg1 as 'dest' and ureg2 as 'source'
         put_to_reg(OpCode[8:16],get_from_reg(OpCode[16:23]))
     elif int(OpCode[1:6]) == 1001:
-        print('IF condition DM(Ia,Mb) <-> ureg')
+        #print('IF condition DM(Ia,Mb) <-> ureg')
+        i_data=format(int(get_from_reg("00010"+OpCode[19:22]),2),"04x")
+        m_data=get_from_reg("00100"+OpCode[22:25])
+        h=open(path+_b+"/dm_file.txt","rt")
+        if(OpCode[25]=="1"):
+            #print("write to dm")
+            ureg_data=format(int(get_from_reg(OpCode[8:16]),2),"04x")
+            i=open(path+_b+"/dm_file2.txt","wt")
+            for j in h:
+                if (i_data in j):
+                    j=i_data+"\t"+ureg_data+"\n"
+                i.write(j)
+            h.close()
+            i.close()
+            os.remove(path+_b+"/dm_file.txt")
+            os.rename(path+_b+"/dm_file2.txt",path+_b+"/dm_file.txt")
+        else:
+            #print("Read from Dm")
+            for j in h:
+                if(i_data in j):
+                    ureg_data=j.split("\t")[-1].strip("\n")
+            put_to_reg(OpCode[8:16],ureg_data.upper())
+            h.close()
+        i_data=format(int(i_data,16)+int(m_data,2),"016b")
+        put_to_reg("00010"+OpCode[19:22],i_data)
     elif int(OpCode[1:6]) == 1000:
         print('IF condition modify (Ia,Mb)')
-        put_to_reg("00010"+OpCode[19:22],get_from_reg("00100"+OpCode[22:25]))
+        i_data=get_from_reg("00010"+OpCode[19:22])
+        m_data=get_from_reg("00100"+OpCode[22:25])
+        i_data=format(int(i_data,2)+int(m_data,2),"016b")
+        put_to_reg("00010"+OpCode[19:22],i_data)
     elif int(OpCode[1:6]) == 1100:
         print('IF condition JUMP (Md,Ic)')
     elif int(OpCode[1:6]) == 1101:
@@ -190,10 +227,13 @@ def condition(a):
 # Main Function
 #---------------------------------------------------------------------------
 
-b=input("Enter name of OpCode file:")
-f=open(b,"rt")
-z=input("Enter name of register dump file:")
-g=open(z,"wt")
+_b=input("Enter name of OpCode folder:")
+f=open(path+_b+"/pm_file.txt","rt")
+g=open(path+_b+"/reg_dump.txt","wt")
+h=open(path+_b+"/dm_file.txt","wt")
+for i in range(65536):
+    h.write(format(i,"04x")+"\txxxx\n")
+h.close()
 start=time.time()
 l=[]
 for i in f:
@@ -222,6 +262,20 @@ for i in reg_name.keys():
         value=ubin_to_hex(value)
     g.write("{} : {}".format(i,value))
     g.write("\n")
-print("Register values stored in {}.txt".format(z))
+print("Register values stored in reg_dump.txt")
+print("Data Memory dumped in dm_file.txt")
+f=open(path+_b+"/dm_file.txt","rt")
+g=open(path+_b+"/"+_b[0:2]+".txt","rt")
+__o=True
+for i,j in zip(f,g):
+    if("xxxx" in i and "xxxx" in j):
+        continue
+    if(i[5:]!=j):
+        __o=False
+        print("Error in {}".format(i[0:5]))
+if(__o==False):
+    print("Difference exist between Verilog Simulation and Referance Model output")
+else:
+    print("Verilog Simulation and Referance model outputs are equal")
 end=time.time()
 print("Time taken to complete program = %s"%(end-start))
