@@ -149,7 +149,7 @@ def primary(OpCode):
     elif int(OpCode[1:6]) == 1:
         # print('IF condition ureg1 = ureg2')
         # ureg1 as 'dest' and ureg2 as 'source'
-        put_to_reg(OpCode[8:16],get_from_reg(OpCode[16:23]))
+        put_to_reg(OpCode[8:16],get_from_reg(OpCode[16:24]))
     elif int(OpCode[1:6]) == 1001:
         #print('IF condition DM(Ia,Mb) <-> ureg')
         i_data=format(int(get_from_reg("00010"+OpCode[19:22]),2),"04x")
