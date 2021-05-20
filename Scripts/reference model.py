@@ -400,7 +400,7 @@ def primary(OpCode):
     elif int(OpCode[1]) == 1:
         # print('IF condition compute')
         if(OpCode[6:8]=="00"):
-            print("ALU")
+            ALU(OpCode[(31-22):(31-16)], OpCode[(31-16):(31-12)], OpCode[(31-12):(31-8)], OpCode[(31-8):(31-4)])
         elif(OpCode[6:8]=="01"):
             print("Multiplier")
         else:
