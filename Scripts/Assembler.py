@@ -1,6 +1,21 @@
+# The file opening logic has been written keeping into consideration that the test files have the format
+# - a1 - left shift                     //This is the parent folder
+#   - a_p1.txt                          //Holds the instructions
+#   - pmfile.txt                        //Is the output file to write to and will be stored in the  directory specified in PM_LOCATE
+# The path is defined such that no change needs to be made there. The tesing files should be put in their own folders
+# inside a "Test" folder, i.e a1 - left shift is inside a folder "Test" in the script directory
+# 18th may
+import os
 from os import system,name
 import re
 import time
+
+# -------------------------------------------------------------------------------------------------------------------------------------
+
+PM_LOCATE=os.path.dirname(__file__)+"/Test/"                         # Provide path to PM file and instructions here
+
+#-------------------------------------------------------------------------------------------------------------------------------------
+
 def HextoBin(hnum):
     bnum = format(int(hnum,16),'016b')
     return bnum
@@ -109,7 +124,7 @@ def compute(com):
         Comp_code = "000001001"
     elif(re.match("R[0-9]+[ ]?=[ ]?MAX[ ]?[(][ ]?R[0-9]+[ ]?,[ ]?R[0-9]+[ ]?[)][ ]?",com)):
         Comp_code = "000001011"
-    elif(re.match("R[0-9]+[ ]?=[ ]?-R[0-9]+[ ]?",com)):
+    elif(re.match("R[0-9]+[ ]?=[ ]?-[ ]?R[0-9]+[ ]?",com)):
         Comp_code = "000010001"
     elif(re.match("R[0-9]+[ ]?=[ ]?ABS[ ]?R[0-9]+[ ]?",com)):
         Comp_code = "000011001"
@@ -151,7 +166,6 @@ def compute(com):
         Comp_code = "01010"+sign
     elif(re.match("MR[ ]?=[ ]?R[0-9]+[ ]?[*][ ]?R[0-9]+[ ]?",com)):
         Comp_code = "01011"+sign
-        print("1")
     elif(re.match("R[0-9]+[ ]?=[ ]?MR[ ]?[+][ ]?R[0-9]+[ ]?[*][ ]?R[0-9]+[ ]?",com)):
         Comp_code = "01100"+sign
     elif(re.match("MR[ ]?=[ ]?MR[ ]?[+][ ]?R[0-9]+[ ]?[*][ ]?R[0-9]+[ ]?",com)):
@@ -191,6 +205,8 @@ d="^[ ]?DM[ ]?[(][ ]?I[0-7][ ]?,[ ]?M[0-7][ ]?[)][ ]?$"
 def Assembler(x):
     OpCode = "00000000000000000000000000000000"
     x=x.upper()
+    while(x[-1]==" " or x[-1]=="\t"):
+        x=x[0:-1]
     if(x=="NOP"):
         OpCode = "00000000000000000000000000000000"
     elif(x=="IDLE"):
@@ -263,12 +279,10 @@ def clear():
         _=system('cls')
     else:
         _=system("clear")
-a=input("Enter name of file containing instructions:")
-xyzl = re.split("in", a)
-xyz = xyzl[-1].replace('.txt','')
-g=open(a,"rt")
-b='opcode.txt'
-f=open(b,"wt")
+a=input("Enter name of folder containing instructions:")
+g=open(PM_LOCATE+a+"/"+a[0]+"_p"+a[1]+".txt","rt")                                  #Changed
+#b=input("Enter name of OpCode Destination file:")
+f=open(PM_LOCATE+a+"/pm_file.txt","wt")                                      #Changed
 l=[]
 rewrite=False
 instr_list=[]
@@ -276,10 +290,12 @@ for i in g:
     l.append(i.strip("\n"))
 i=0
 while(i<len(l)):
-    time.sleep(1)
+    time.sleep(.1)
     instr=l[i]
     i=i+1
-    if(instr!=" "):
+    if(instr!=" " or instr!="\n" or instr!="\t" or instr!=""):
+        if(instr.lower()==".memcheck"):
+            break
         print(instr)
         instr_list.append(instr)
         if("#" in instr):
@@ -298,7 +314,8 @@ while(i<len(l)):
                 continue
         else:
             inst = instr
-        OpCode=Assembler(inst)
+        if(len(instr)>0):
+            OpCode=Assembler(inst)
         if("ERROR" in OpCode):
             clear()
             instr_list.pop()
@@ -328,11 +345,11 @@ while(i<len(l)):
                 instr_list.append(instr)
                 print(instr,end='')
                 i=i+1
-print("\nOpcodes saved in {}".format(b))
+print("\nOpcodes saved in pm_file.txt")                     #Changed
 f.close()
 g.close()
 if(rewrite==True):
-    g=open(a,"wt")
+    g=open(PM_LOCATE+a+"/Input.txt","wt")                              #Changed
     for i in range(len(l)):
         g.write(l[i])
         g.write('\n')
