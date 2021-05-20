@@ -1,5 +1,3 @@
-# if the test data of register dump is in the format <addr><\t><data>, then change the condition of if statement in 
-# line 266 to if(i!=j)
 # The file opening logic has been written keeping into consideration that the test files have the format
 # - a1 - left shift                     //This is the parent folder
 #   - a_p1.txt                          //Holds the instructions
@@ -270,7 +268,7 @@ __o=True
 for i,j in zip(f,g):
     if("xxxx" in i and "xxxx" in j):
         continue
-    if(i[5:]!=j):
+    if(i[5:] not in j):
         __o=False
         print("Error in {}".format(i[0:5]))
 if(__o==False):
