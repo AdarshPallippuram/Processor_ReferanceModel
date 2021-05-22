@@ -44,12 +44,9 @@ def get_from_reg(inst):
 #---------------------------------------------------------------------------
 
 def hex_to_ubin(hnum):
-    return format(int(hnum,16),'016b')
-def hex_to_ubin40(hnum):
-    bnum = format(int(hnum,16),'040b')
-    return bnum
+    return format(int(hnum,16),'0'+str(len(hnum))+'b')
 def ubin_to_hex(bnum):
-    return format(int(bnum,2),'04X')
+    return format(int(bnum,2),'0'+str(len(bnum)//4)+'X')
 def int_to_hex(num):
     return format(num,"04X")
 def compliment(num):
@@ -69,6 +66,28 @@ def bit_wr(ureg,bit,val):                   # Bit writing function
     l = list(reg_bank['0111'][ureg])
     l[15-bit] = val
     reg_bank['0111'][ureg] = ''.join(l)
+def fbin_to_decimal(num,s1): # ARgumnets are the binary number as string and the signed/!unsigned bit of the operand
+    s1=int(s1)
+    if(len(num)>16):
+        num=num[7+s1:]
+    val=int(num[0])*(-s1)
+    n=len(num)
+    for i in range(s1,n):
+        val=val+int(num[i])*2**(-i-1+s1)
+    return(val)
+def decimal_to_fbin(num,s1): # ARgumnets are the integer number and the signed/!unsigned bit of the operand
+    s1=int(s1)
+    if(num>0):
+        val="00000000"+s1*"0"
+    else:
+        val="111111111"
+        num=num+1
+    while(len(val)<40):
+        num=num*2
+        val=val+str(num)[0]
+        if(num>=1):
+            num=num-1
+    return(ubin_to_hex(val))
 
 #---------------------------------------------------------------------------
 # ALU
@@ -310,13 +329,13 @@ def multi(op):
                 rn = "00000000"+mr2
             else: #rn = sat MRFMRF
                 if(op[4:6]=="01" and "1" in mrf[0:8]):
-                    rn = hex_to_ubin40("00ffffffff")[-16:]  #unsigned fractional
+                    rn = hex_to_ubin("00ffffffff")[-16:]  #unsigned fractional
                 elif(op[4:6]=="00" and "1" in mrf[0:24]):
-                    rn = hex_to_ubin40("000000ffff")[-16:]  #unsigned integer
+                    rn = hex_to_ubin("000000ffff")[-16:]  #unsigned integer
                 elif(op[4:6]=="11" and "1" in mrf[0:9] and "0" in mrf[0:9]):
-                    rn = hex_to_ubin40("007fffffff")[8:20]
+                    rn = hex_to_ubin("007fffffff")[8:20]
                 elif(op[4:6]=="10" and "1" in mrf[0:25] and "0" in mrf[0:35]):
-                    rn = hex_to_ubin40("0000007fff")[-16:]
+                    rn = hex_to_ubin("0000007fff")[-16:]
                 else:
                     if(op[4:6]=="01" or op[4:6]=="00" or op[4:6]=="10"):
                         rn=mrf[-16:]
@@ -336,13 +355,13 @@ def multi(op):
             else:
                 print("MRF= SAT MRF")
                 if(op[4:6]=="01" and "1" in mrf[0:8]):      #unsigned fractional
-                    mrf=hex_to_ubin40("00ffffffff")
+                    mrf=hex_to_ubin("00ffffffff")
                 elif(op[4:6]=="00"and "1" in mrf[0:24]):    #unsigned integer
-                    mrf=hex_to_ubin40("000000ffff")
+                    mrf=hex_to_ubin("000000ffff")
                 elif(op[4:6]=="11" and "1" in mrf[0:9] and "0" in mrf[0:9]): 
-                    mrf=hex_to_ubin40("007fffffff")
+                    mrf=hex_to_ubin("007fffffff")
                 elif(op[4:6]=="10" and "1" in mrf[0:25] and "0" in mrf[0:25]): 
-                    mrf=hex_to_ubin40("0000007fff")
+                    mrf=hex_to_ubin("0000007fff")
     elif(op[0:2]=="01"):  # rx*ry 
         if(op[2]=="0"):    #rn = rx*ry
             if(op[3:5]=="00"): #unsigned multiplication
@@ -402,7 +421,6 @@ def multi(op):
                 rn = format(rn,'016b')
             put_to_reg(Rn,rn)  
         else:
-            print("MRF=MRF-Rx*Ry")
             if(op[3:5]=="00"):
                 rx=get_from_reg(Rx)
                 ry=get_from_reg(Ry)
@@ -413,6 +431,7 @@ def multi(op):
                 ry=get_from_reg(Ry)
                 mrf = int(mrf,2)-int(signed_mul(rx,ry,op[3],op[4]),2)
                 mrf = format(mrf,'040b')
+                print(mrf)
 
 #---------------------------------------------------------------------------
 # Shifter
