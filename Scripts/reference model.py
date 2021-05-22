@@ -53,7 +53,7 @@ def ubin_to_hex(bnum):
 def int_to_hex(num):
     return format(num,"04X")
 def compliment(num):
-    return int(format((int(num)^int(len(num)*"1",2))+1,"0b")[-len(num):],2)
+    return format((int(num,2)^int(len(num)*"1",2))+1,"0"+str(len(num))+"b")[-len(num):]
 def b_to_d(b):                          # Function converts binary(b) to decimal(d)
     if b[0] == '1':
         return -int(compliment(b),2)
@@ -269,18 +269,18 @@ def signed_mul(num1,num2,x,y):
     comp1=0
     comp2 =0
     if(x=='1' and num1[0]=="1"):
-        num1 = compliment(num1)
+        num1 = int(compliment(num1),2)
         comp1 = 1
     else:
         num1= int(num1,2)
     if(y=='1' and num2[0]=="1"):
-        num2 = compliment(num2)
+        num2 = int(compliment(num2),2)
         comp2 = 1
     else:
         num2 = int(num2,2)
     product = format(num1*num2,'040b')
     if(comp1^comp2):
-        product = compliment(product)
+        product = int(compliment(product),2)
         product = format(product,'040b')
         x=len(product.split('1')[0])
         product = '1'*x + product[x:]
@@ -300,6 +300,7 @@ def multi(op):
     Rx = "0000"+op[11:15]
     Ry = "0000"+ op[15:19]
     if(op[0:2]=="00"):
+        rn=get_from_reg(Rn)
         if(op[2]=="0"):
             if(op[17:19]=="00"): #rn = mr0
                 rn = mr0
@@ -309,13 +310,18 @@ def multi(op):
                 rn = "00000000"+mr2
             else: #rn = sat MRFMRF
                 if(op[4:6]=="01" and "1" in mrf[0:8]):
-                    rn = hex_to_ubin40("00ffffffff")[0:16]  #unsigned fractional
+                    rn = hex_to_ubin40("00ffffffff")[-16:]  #unsigned fractional
                 elif(op[4:6]=="00" and "1" in mrf[0:24]):
-                    rn = hex_to_ubin40("000000ffff")[0:16]  #unsigned integer
+                    rn = hex_to_ubin40("000000ffff")[-16:]  #unsigned integer
                 elif(op[4:6]=="11" and "1" in mrf[0:9] and "0" in mrf[0:9]):
-                    rn = hex_to_ubin40("007fffffff")[0:16]
+                    rn = hex_to_ubin40("007fffffff")[8:20]
                 elif(op[4:6]=="10" and "1" in mrf[0:25] and "0" in mrf[0:35]):
-                    rn = hex_to_ubin40("0000007fff")[0:16]
+                    rn = hex_to_ubin40("0000007fff")[-16:]
+                else:
+                    if(op[4:6]=="01" or op[4:6]=="00" or op[4:6]=="10"):
+                        rn=mrf[-16:]
+                    else:
+                        rn=mrf[8:20]
             put_to_reg(Rn,rn[0:16])
         else:
             if(op[17:19]=="00"):
@@ -425,7 +431,7 @@ def shifter(inst):
         i+=1
     if(inst[1:3]=="00"):
         if(R_val[1][0]=="1"):
-            shift=compliment(R_val[1])
+            shift=int(compliment(R_val[1]),2)
             R_val[0]=R_val[0][0]*shift+R_val[0]
             R_val[0]=R_val[0][0:16]
         else:
@@ -439,11 +445,12 @@ def shifter(inst):
             sz="1"
     elif(inst[1:3]=="01"):
         if(R_val[1][0]=="1"):
-            shift=compliment(R_val[1])%16
-            put_to_reg(R[0],R_val[0][shift:]+R_val[0][0:shift])
+            shift=int(compliment(R_val[1]),2)%16
+            put_to_reg(R[0],R_val[0][16-shift:]+R_val[0][0:16-shift])
+            
         else:
             shift=int(R_val[1][1:],2)%16
-            put_to_reg(R[0],R_val[0][16-shift:]+R_val[0][0:16-shift])
+            put_to_reg(R[0],R_val[0][shift:]+R_val[0][0:shift])
         if(int(R_val[0],2)==0):
             sz="1"
     elif(inst[1:3]=="10"):
@@ -507,7 +514,7 @@ def primary(OpCode):
                 ureg_data=format(int(ureg_data,2),"04x")
                 i=open(path+_b+"/dm_file2.txt","wt")
                 for j in h:
-                    if (i_data in j):
+                    if (i_data in j[:4]):
                         j=i_data+"\t"+ureg_data+"\n"
                     i.write(j)
                 h.close()
@@ -577,6 +584,7 @@ def condition(a):
 #---------------------------------------------------------------------------
 
 _b=input("Enter name of OpCode folder:")
+file_name=_b.split(" ")[0]
 f=open(path+_b+"/pm_file.txt","rt")
 g=open(path+_b+"/reg_dump.txt","wt")
 h=open(path+_b+"/dm_file.txt","wt")
@@ -611,10 +619,10 @@ for i in reg_name.keys():
         value=ubin_to_hex(value)
     g.write("{} : {}".format(i,value))
     g.write("\n")
-print("Register values stored in reg_dump.txt")
+print("values stored in reg_dump.txt")
 print("Data Memory dumped in dm_file.txt")
 f=open(path+_b+"/dm_file.txt","rt")
-g=open(path+_b+"/"+_b[0:2]+".txt","rt")
+g=open(path+_b+"/"+file_name+".txt","rt")
 __o=True
 for i,j in zip(f,g):
     if("xxxx" in i and "xxxx" in j):
