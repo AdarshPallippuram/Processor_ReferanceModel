@@ -280,7 +280,8 @@ def clear():
     else:
         _=system("clear")
 a=input("Enter name of folder containing instructions:")
-g=open(PM_LOCATE+a+"/"+a[0]+"_p"+a[1]+".txt","rt")                                  #Changed
+start=time.time()
+g=open(PM_LOCATE+a+"/"+a[:2]+"_p"+a[3:5]+".txt","rt")                                  #Changed
 #b=input("Enter name of OpCode Destination file:")
 f=open(PM_LOCATE+a+"/pm_file.txt","wt")                                      #Changed
 l=[]
@@ -354,4 +355,4 @@ if(rewrite==True):
         g.write(l[i])
         g.write('\n')
     g.close()
-time.sleep(2)
+# time.sleep(2)

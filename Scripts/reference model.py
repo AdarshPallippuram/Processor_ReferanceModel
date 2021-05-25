@@ -6,6 +6,7 @@
 # inside a "Test" folder, i.e a1 - left shift is inside a folder "Test" in the script directory
 import os
 import time
+import Assembler
 path=os.path.dirname(__file__)+"/Test/"          
 #---------------------------------------------------------------------------
 # Reg banks, uregs and related dictionaries and functions
@@ -53,14 +54,14 @@ def ubin_to_hex(bnum):
 def int_to_hex(num):
     return format(num,"04X")
 def compliment(num):
-    return int(format((int(num)^int(len(num)*"1",2))+1,"0b")[-len(num):],2)
+    return format((int(num,2)^int(len(num)*"1",2))+1,"0"+str(len(num))+"b")[-len(num):]
 def b_to_d(b):                          # Function converts binary(b) to decimal(d)
     if b[0] == '1':
         return -int(compliment(b),2)
     else:
         return int(b,2)
 def d_to_b(d):                          # Function converts decimal(d) to binary(b)
-    n = '{:>016b}'.format(abs(d))
+    n = '{:>016b}'.format(abs(d))[-16:]
     if d < 0:
         return compliment(n)
     else:
@@ -114,17 +115,17 @@ def addcsubb(Rn_ad,Rx_ad,Ry_ad,is_sub,C):   # add, add with carry, sub, sub with
             Rn = Rx + Ry
             zvnc[3] = is_AC(Rx,Ry,0,0)      # AC checking
     Rn_b = d_to_b(Rn)                    
-    if Rn_b[0] == '1':                  # AN checking
-        zvnc[2] = '1'
-    if int(Rn_b,2) == 0:                # AZ checking
-        zvnc[0] = '1'
     if Rn not in range(-32768,32768):   # AV checking
         zvnc[1] = '1'
-        if int(reg_bank['0111']['1011']) == 1:
+        if int(reg_bank['0111']['1011']) == 1:  # Checking for ALU sat bit
             if Rn < -32768:
                 Rn_b = d_to_b(-32768)
             else:
                 Rn_b = d_to_b(32767)
+    if Rn_b[0] == '1':                  # AN checking
+        zvnc[2] = '1'
+    if int(Rn_b,2) == 0:                # AZ checking
+        zvnc[0] = '1'
     astat_alu_wr(zvnc)
     put_to_reg('0000'+Rn_ad,Rn_b)              # Rn reg updating
 
@@ -507,7 +508,7 @@ def primary(OpCode):
                 ureg_data=format(int(ureg_data,2),"04x")
                 i=open(path+_b+"/dm_file2.txt","wt")
                 for j in h:
-                    if (i_data in j):
+                    if (i_data in j[:4]):
                         j=i_data+"\t"+ureg_data+"\n"
                     i.write(j)
                 h.close()
@@ -576,14 +577,14 @@ def condition(a):
 # Main Function
 #---------------------------------------------------------------------------
 
-_b=input("Enter name of OpCode folder:")
+_b=Assembler.a
 f=open(path+_b+"/pm_file.txt","rt")
 g=open(path+_b+"/reg_dump.txt","wt")
 h=open(path+_b+"/dm_file.txt","wt")
 for i in range(65536):
     h.write(format(i,"04x")+"\txxxx\n")
 h.close()
-start=time.time()
+# start=time.time()
 l=[]
 for i in f:
     l.append(i.strip("\n"))
@@ -608,9 +609,11 @@ for i in range(3):
 for i in reg_name.keys():
     value=reg_bank[reg_name[i][0:4]][reg_name[i][4:]]
     if(value!="XXXX"):
-        value=ubin_to_hex(value)
+        if i != 'ASTAT':
+            value=ubin_to_hex(value)
     g.write("{} : {}".format(i,value))
     g.write("\n")
+print()
 print("Register values stored in reg_dump.txt")
 print("Data Memory dumped in dm_file.txt")
 f=open(path+_b+"/dm_file.txt","rt")
@@ -623,8 +626,16 @@ for i,j in zip(f,g):
         __o=False
         print("Error in {}".format(i[0:5]))
 if(__o==False):
+    print('----------------------------------------------------------------------')
+    print('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
     print("Difference exist between Verilog Simulation and Referance Model output")
+    print('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
+    print('----------------------------------------------------------------------')
 else:
-    print("Verilog Simulation and Referance model outputs are equal")
+    print('--------------------------------------------------------')
+    print('--------------------------------------------------------')
+    print("Verilog Simulation and Referance model outputs are EQUAL")
+    print('--------------------------------------------------------')
+    print('--------------------------------------------------------')
 end=time.time()
-print("Time taken to complete program = %s"%(end-start))
+print("Time taken to complete program = %s"%(end-Assembler.start))
