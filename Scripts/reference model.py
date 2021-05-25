@@ -699,7 +699,7 @@ print()
 print("Register values stored in reg_dump.txt")
 print("Data Memory dumped in dm_file.txt")
 f=open(path+_b+"/dm_file.txt","rt")
-g=open(path+_b+"/"+_b[0:2]+".txt","rt")
+g=open(path+_b+"/"+"expected.txt","rt")
 __o=True
 for i,j in zip(f,g):
     if("xxxx" in i and "xxxx" in j):
