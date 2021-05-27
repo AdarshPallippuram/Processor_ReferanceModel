@@ -1,0 +1,17 @@
+r1 = 2021
+r2 = 2021
+r3 = 5555
+i0 = 0
+m0 = 1
+comp(r3,r1)
+dm(i0,m0) = astat   #8000
+comp(r1,r2)
+dm(i0,m0) = astat   #4001
+comp(r1,r1)
+dm(i0,m0) = astat   #2001
+comp(r1,r3)
+dm(i0,m0) = astat   #1004
+r4 = abcd
+r5 = bcde
+r6 = 8000
+
