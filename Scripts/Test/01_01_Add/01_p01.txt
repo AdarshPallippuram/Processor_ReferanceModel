@@ -14,4 +14,4 @@ dm(i0,m0) = r2		#0004 0000, cnvz 1001
 dm(i0,m0) = astat	#0005 0009
 r2 = r3 + r3
 dm(i0,m0) = r2		#0006 579a, cnvz 1010
-dm(i0,m0) = astat	#0007 a
+dm(i0,m0) = astat	#0007 000a

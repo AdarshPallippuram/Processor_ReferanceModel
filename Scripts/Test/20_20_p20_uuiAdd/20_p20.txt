@@ -3,17 +3,32 @@ r3=9000
 r1=7000
 r2=f002
 mr=r3*r1 uui	# 00 3f00 0000
+r15=astat       # 0020
 mr=mr+r3*r2 uui	# 00 c601 2000
+r14=astat       # 0020
 r4=sat mr ui	# 00 0000 (ffff)
 mr=sat mr ui	# 00 0000 ffff
-mr0=r2		# 00 0000 f002
+r13=astat       # 0000
+mr0=r2	    	# 00 0000 f002
+r12=astat       # 0000
 r6=mr+r4*r1 uui	# 00 7000 (8002)
+r11=astat       # 0020
 i0=0
 m0=1
 dm(i0,m0)=r4	# dm(0)=ffff
 dm(i0,m0)=r6	# dm(1)=8002
+dm(i0,m0)=r15
+dm(i0,m0)=r14
+dm(i0,m0)=r13
+dm(i0,m0)=r12
+dm(i0,m0)=r11
 finish
 
 .memcheck
 0000	ffff
 0001	8002
+0002    0020
+0003    0020
+0004    0000
+0005    0000
+0006    0020

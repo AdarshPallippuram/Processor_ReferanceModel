@@ -10,7 +10,7 @@ i0=0
 m0=1
 dm(i0,m0)=r3	# dm(0) = 9000
 dm(i0,m0)=r4	# dm(1) = ffff
-dm(i0,mo)=astat # dm(2) = 0000
+dm(i0,m0)=astat # dm(2) = 0000
 finish
 
 .memcheck
