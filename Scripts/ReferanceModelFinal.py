@@ -330,6 +330,7 @@ def unsigned_mul(num1,num2):
 mrf="0000000000000000000000000000000000000000"
 def multi(op):
     global mrf
+    mrf1="0000000000000000000000000000000000000000"
     mr2=mrf[0:8]
     mr1 = mrf[8:24]
     mr0 = mrf[24:40]
@@ -344,216 +345,137 @@ def multi(op):
         rn=get_from_reg(Rn)
         mn="0"
         mv="0"
-        if(op[2]=="0"):
-            if(op[17:19]=="00"): #rn = mr0
+        if(op[2]=="0" and op[17:]!="11"):
+            if(op[17:]=="00"): #rn = mr0
                 rn = mr0
-            elif(op[17:19]=="01"): #rn = mr1
+            elif(op[17:]=="01"): #rn = mr1
                 rn = mr1
-            elif(op[17:19]=="10"): #rn = mr2
+            elif(op[17:]=="10"): #rn = mr2
                 rn = 8*mr2[0]+mr2
-            else: #rn = sat MRFMRF
-                if(op[4:6]=="01" and "1" in mrf[0:8]):
-                    rn = hex_to_ubin("00ffffffff")[-16:]  #unsigned fractional
-                elif(op[4:6]=="00" and "1" in mrf[0:24]):
-                    rn = hex_to_ubin("000000ffff")[-16:]  #unsigned integer
-                elif(op[4:6]=="11" and "1" in mrf[0:9] and "0" in mrf[0:9]):
-                    if(mrf[0]=="0"):
-                        rn = hex_to_ubin("007fffffff")[8:24]
-                    else:
-                        rn = hex_to_ubin("ff80000000")[8:24]
-                elif(op[4:6]=="10" and "1" in mrf[0:25] and "0" in mrf[0:25]):
-                    if(mrf[0]=="0"):
-                        rn = hex_to_ubin("0000007fff")[-16:]
-                    else:
-                        rn = hex_to_ubin("ffffff8000")[-16:]
-                else:
-                    if(op[5]=="0"):
-                        rn=mrf[-16:]
-                    else:
-                        rn=mrf[8:24]
-            put_to_reg(Rn,rn[0:16])
-            if((int(op[3])|int(op[4]))==1 and rn[0]=="1"):
-                mn="1"
-        else:
-            if(op[17:19]=="00"):
+        elif(op[2]=="1" and op[17:]!="11"):
+            mr0=16*"0"
+            mr1=16*"0"
+            mr2=8*"0"
+            if(op[17:]=="00"):
                 mr0 =get_from_reg(Rx)
-                mr1=16*"0"
-                mr2=8*"0"
-                mrf=(mr2+mr1+mr0)
-            elif(op[17:19]=="01"):
-                mr0=16*"0"
+            elif(op[17:]=="01"):
                 mr1 = get_from_reg(Rx)
                 mr2=8*mr1[0]
-                mrf=(mr2+mr1+mr0)
-            elif(op[17:19]=="10"):
+            elif(op[17:]=="10"):
                 mr2 =get_from_reg(Rx)[8:]
-                mr1=16*"0"
-                mr0=8*"0"
-                mrf=(mr2+mr1+mr0)
+            mrf1=(mr2+mr1+mr0)
+        elif(op[17:]=="11"):
+            if(op[4:6]=="01" and "1" in mrf[0:8]):      #unsigned fractional
+                mrf1=hex_to_ubin("00ffffffff")
+                if(op[2]=="0"):
+                    rn=mrf1[8:24]
+            elif(op[4:6]=="00"and "1" in mrf[0:24]):    #unsigned integer
+                mrf1=hex_to_ubin("000000ffff")
+                if(op[2]=="0"):
+                    rn=mrf1[-16:]
+            elif(op[4:6]=="11" and "1" in mrf[0:9] and "0" in mrf[0:9]): 
+                if(mrf[0]=="0"):
+                    mrf1 = hex_to_ubin("007fffffff")
+                else:
+                    mrf1 = hex_to_ubin("ff80000000")
+                if(op[2]=="0"):
+                    rn=mrf1[8:24]
+            elif(op[4:6]=="10" and "1" in mrf[0:25] and "0" in mrf[0:25]): 
+                if(mrf[0]=="0"):
+                    mrf1 = hex_to_ubin("0000007fff")
+                else:
+                    mrf1 = hex_to_ubin("ffffff8000")
+                if(op[2]=="0"):
+                    rn=mrf1[-16:]
+            elif(op[2]=="0"):
+                if(op[5]=="0"):
+                    rn=mrf[-16:]
+                else:
+                    rn=mrf[8:24]
+            if((int(op[3])|int(op[4]))==1 and mrf1[0]=="1"):
+                mn="1"
+    else:
+        if(op[5]=="1"): #signed fractional multiplication with both numbers signed
+            mrf1=decimal_to_fbin(fmul(rx,ry,op[3],op[4]),int(op[3])|int(op[4]))
+        elif(op[3:5]=="00"): #unsigned multiplicatiopn
+            mrf1=unsigned_mul(rx,ry)
+        else:                               #signed multiplication
+            mrf1=signed_mul(rx,ry,op[4],op[3])
+        if(op[5]=="1" and op[6]=="1"):
+            if(mrf1[-16]=="0"):
+                mrf1=mrf1[-40:-16]+16*"0"
             else:
-                if(op[4:6]=="01" and "1" in mrf[0:8]):      #unsigned fractional
-                    mrf=hex_to_ubin("00ffffffff")
-                elif(op[4:6]=="00"and "1" in mrf[0:24]):    #unsigned integer
-                    mrf=hex_to_ubin("000000ffff")
-                elif(op[4:6]=="11" and "1" in mrf[0:9] and "0" in mrf[0:9]): 
-                    if(mrf[0]=="0"):
-                        mrf = hex_to_ubin("007fffffff")
+                if("1" not in mrf1[-15:]):
+                    mrf1=mrf1[-40:-16]
+                    if(mrf[-1]=="0"):
+                        mrf1=mrf1+16*"0"
                     else:
-                        mrf = hex_to_ubin("ff80000000")
-                elif(op[4:6]=="10" and "1" in mrf[0:25] and "0" in mrf[0:25]): 
-                    if(mrf[0]=="0"):
-                        mrf = hex_to_ubin("0000007fff")
-                    else:
-                        mrf = hex_to_ubin("ffffff8000")
-                if((int(op[3])|int(op[4]))==1 and mrf[0]=="1"):
-                    mn="1"
-    elif(op[0:2]=="01"):  # rx*ry 
-        if(op[2]=="0"):    #rn = rx*ry
-            if(op[5]=="1"): #signed fractional multiplication with both numbers signed
-                rn=decimal_to_fbin(fmul(rx,ry,op[3],op[4]),int(op[3])|int(op[4]))[8:24]
-            elif(op[3:5]=="00"): #unsigned multiplication
-                rn = unsigned_mul(rx,ry)[24:40]
-            else:                               #signed fractional multiplication
-                rn = signed_mul(rx,ry,op[3],op[4])[24:]
-            put_to_reg(Rn,rn)
-            if((int(op[3])|int(op[4]))==1 and rn[0]=="1"):
-                mn="1"
-            if(("1" in rn[0:4]) and ("0" in rn[0:4])):
-                mv="1"
-        else: #mr=rx*ry 
-            if(op[5]=="1"): #signed fractional multiplication with both numbers signed
-                mrf=decimal_to_fbin(fmul(rx,ry,op[3],op[4]),int(op[3])|int(op[4]))
-            elif(op[3:5]=="00"): #unsigned multiplicatiopn
-                mrf=unsigned_mul(rx,ry)
-            else:                               #signed multiplication
-                mrf=signed_mul(rx,ry,op[4],op[3])
-            if((int(op[3])|int(op[4]))==1 and mrf[0]=="1"):
-                mn="1"
-            if(op[5]=="1"):
-                if(int(op[3])|int(op[4])==1):
-                    if(("1" in mrf[0:17]) and ("0" in mrf[0:17])):
-                        mv="1"
+                        n=len(mrf1.split("0")[-1])
+                        mrf1=mrf1[-24:-1-n]+"1"+n*"0"+16*"0"
                 else:
-                    if(("1" in mrf[0:16]) and ("0" in mrf[0:16])):
-                        mv="1"
-            else:
-                if(int(op[3])|int(op[4])==0):
-                    if(("1" in mrf[0:25]) and ("0" in mrf[0:25])):
-                        mv="1"
-                else:
-                    if(("1" in mrf[0:24]) and ("0" in mrf[0:24])):
-                        mv="1"
-    elif(op[0:2]=="10"):   # mr+rx*ry
-        val=0
-        if(op[2]=="0"):  #rn = mr+ rx*ry
+                    mrf1=mrf1[-40:-16]
+                    mrf1=format(int(mrf1,2)+1,"024b")+16*"0"
+        if(op[0:2]=="10"):   # mr+rx*ry
+            val=0
             if(op[5]=="1"):
-                rn= fbin_to_decimal(mrf,int(op[3])|int(op[4]))+fmul(rx,ry,op[3],op[4])
-                if(rn<(-1)):
+                mrf1=fbin_to_decimal(mrf,int(op[3])|int(op[4]))+fbin_to_decimal(mrf1,int(op[3])|int(op[4]))
+                if(mrf1<(-1)):
                     val=int("ff80000000",16)
-                    rn=rn+1
-                if(rn>1):
+                    mrf1=mrf1+1
+                if(mrf1>1):
                     val=int("007fffffff",16)
-                    rn=rn-1
-                rn=format(val+int(decimal_to_fbin(rn,int(op[3])|int(op[4])),2),"040b")[-32:-15]
+                    mrf1=mrf1-1
+                mrf1=format(val+int(decimal_to_fbin(mrf1,int(op[3])|int(op[4])),2),"040b")[-40:]
             elif(op[3:5]=="00"): 
-                rn = int(mrf,2)+int(unsigned_mul(rx,ry)[-16:])
-                rn = format(rn,'016b')[-16:]
+                mrf1 = int(mrf,2)+int(mrf1,2)
+                mrf1 = format(mrf1,'040b')
             else: #signed multiplication
-                rn = int(mrf,2)+int(signed_mul(rx,ry,op[4],op[3])[24:40])
-                rn = format(+rn,'016b')[-16:]
-            put_to_reg(Rn,rn)
-            if((int(op[3])|int(op[4]))==1 and rn[0]=="1"):
-                mn="1"
-            if(("1" in rn[0:4]) and ("0" in rn[0:4])):
-                mv="1"
-        else:       #mr = mr+rx*ry
+                mrf1 = int(mrf,2)+int(mrf1,2)
+                mrf1 = format(mrf1,'040b')
+        elif(op[0:2]=="11"):                   #rn = mr-rx*ry
+            val=0
             if(op[5]=="1"):
-                mrf=fbin_to_decimal(mrf,int(op[3])|int(op[4]))+fmul(rx,ry,op[3],op[4])
-                if(mrf<(-1)):
+                mrf1= fbin_to_decimal(mrf,int(op[3])|int(op[4]))-fbin_to_decimal(mrf1,int(op[3])|int(op[4]))
+                if(mrf1<(-1)):
                     val=int("ff80000000",16)
-                    mrf=mrf+1
-                if(mrf>1):
+                    mrf1=mrf1+1
+                if(mrf1>1):
                     val=int("007fffffff",16)
-                    mrf=mrf-1
-                mrf=format(val+int(decimal_to_fbin(mrf,int(op[3])|int(op[4])),2),"040b")[-40:]
-            elif(op[3:5]=="00"): 
-                mrf = int(mrf,2)+int(unsigned_mul(rx,ry),2)
-                mrf = format(mrf,'040b')
-            else: #signed multiplication
-                mul = signed_mul(rx,ry,op[4],op[3])
-                mrf = int(mrf,2)+int(mul,2)
-                mrf = format(mrf,'040b')
-            if((int(op[3])|int(op[4]))==1 and mrf[0]=="1"):
-                mn="1"
-            if(op[5]=="1"):
-                if(int(op[3])|int(op[4])==1):
-                    if(("1" in mrf[0:17]) and ("0" in mrf[0:17])):
-                        mv="1"
-                else:
-                    if(("1" in mrf[0:16]) and ("0" in mrf[0:16])):
-                        mv="1"
-            else:
-                if(int(op[3])|int(op[4])==0):
-                    if(("1" in mrf[0:25]) and ("0" in mrf[0:25])):
-                        mv="1"
-                else:
-                    if(("1" in mrf[0:24]) and ("0" in mrf[0:24])):
-                        mv="1"
-    else:                   #rn = mr-rx*ry
-        val=0
-        if(op[2]=="0"):
-            if(op[5]=="1"):
-                rn= fbin_to_decimal(mrf,int(op[3])|int(op[4]))-fmul(rx,ry,op[3],op[4])
-                if(rn<(-1)):
-                    val=int("ff80000000",16)
-                    rn=rn+1
-                if(rn>1):
-                    val=int("007fffffff",16)
-                    rn=rn-1
-                rn=format(val+int(decimal_to_fbin(rn,int(op[3])|int(op[4])),2),"040b")[-32:-15]
-            elif(op[3:5]=="00"): 
-                rn = int(mrf,2)-int(unsigned_mul(rx,ry))
-                rn = format(rn,'016b')[-16:]
-            else: #signed multiplication
-                rn = int(mrf,2)-int(signed_mul(rx,ry,op[3],op[4]))
-                rn = format(rn,'016b')[-16:]
-            put_to_reg(Rn,rn)
-            if((int(op[3])|int(op[4]))==1 and rn[0]=="1"):
-                mn="1"
-            if(("1" in rn[0:4]) and ("0" in rn[0:4])):
-                mv="1"
-        else:
-            if(op[5]=="1"):
-                mrf= fbin_to_decimal(mrf,int(op[3])|int(op[4]))-fmul(rx,ry,op[3],op[4])
-                if(mrf<(-1)):
-                    val=int("ff80000000",16)
-                    mrf=mrf+1
-                if(mrf>1):
-                    val=int("007fffffff",16)
-                    mrf=mrf-1
-                mrf=format(val+int(decimal_to_fbin(mrf,int(op[3])|int(op[4])),2),"040b")[-40:]
+                    mrf1=mrf1-1
+                mrf1=format(val+int(decimal_to_fbin(mrf1,int(op[3])|int(op[4])),2),"040b")[-40:]
             elif(op[3:5]=="00"):
-                mrf = int(mrf,2)-int(unsigned_mul(rx,ry),2)
-                mrf = format(mrf,'040b')
+                mrf1 = int(mrf,2)-int(mrf1,2)
+                mrf1 = format(mrf1,'040b')
             else: #signed multiplication
-                mrf = int(mrf,2)-int(signed_mul(rx,ry,op[3],op[4]),2)
-                mrf = format(mrf,'040b')
-            if(mrf[0]=="-"):
-                mrf=compliment(mrf)
-            if(op[5]=="1"):
-                if(int(op[3])|int(op[4])==1):
-                    if(("1" in mrf[0:17]) and ("0" in mrf[0:17])):
-                        mv="1"
-                else:
-                    if(("1" in mrf[0:16]) and ("0" in mrf[0:16])):
-                        mv="1"
+                mrf1 = int(mrf,2)-int(mrf1,2)
+                mrf1 = format(mrf1,'040b')
+            if(mrf1[0]=="-"):
+                mrf1=compliment(mrf1)
+            if(int(op[3])|int(op[4])==1):
+                if(mrf1[0:8]=="11111111"):
+                    mn="1"
+        if(op[5]=="1"):
+            if(int(op[3])|int(op[4])==1):
+                if(("1" in mrf1[0:17]) and ("0" in mrf1[0:17])):
+                    mv="1"
             else:
-                if(int(op[3])|int(op[4])==0):
-                    if(("1" in mrf[0:25]) and ("0" in mrf[0:25])):
-                        mv="1"
-                else:
-                    if(("1" in mrf[0:24]) and ("0" in mrf[0:24])):
-                        mv="1"
+                if(("1" in mrf1[0:16]) and ("0" in mrf1[0:16])):
+                    mv="1"
+        else:
+            if(int(op[3])|int(op[4])==1):
+                if(("1" in mrf1[0:25]) and ("0" in mrf1[0:25])):
+                    mv="1"
+            else:
+                if(("1" in mrf1[0:24]) and ("0" in mrf1[0:24])):
+                    mv="1"
+        if(op[5]=="1"):
+            rn=mrf1[8:24]
+        else:
+            rn=mrf1[24:]
+    if(op[2]=="0"):
+        put_to_reg(Rn,rn)
+    else:
+        mrf=mrf1[-40:]
     flag=get_from_reg("01111100")
     put_to_reg("01111100",flag[0:10]+mv+mn+flag[12:])
 
@@ -645,6 +567,7 @@ def primary(OpCode):
         # print('IF condition ureg1 = ureg2')
         # ureg1 as 'dest' and ureg2 as 'source'
         put_to_reg(OpCode[8:16],get_from_reg(OpCode[16:24]))
+        print("ureg:{}".format(get_from_reg(OpCode[8:16])))
     elif int(OpCode[1:6]) == 1001:
         #print('IF condition DM(Ia,Mb) <-> ureg')
         i_data=format(int(get_from_reg("00010"+OpCode[19:22]),2),"04x")
@@ -732,9 +655,12 @@ def condition(a):
 _b=Assembler.a
 f=open(path+_b+"/pm_file.txt","rt")
 g=open(path+_b+"/reg_dump.txt","wt")
-h=open(path+_b+"/dm_file.txt","wt")
-for i in range(65536):
-    h.write(format(i,"04x")+"\txxxx\n")
+try:
+    h=open(path+_b+"/dm_file.txt","rt")
+except:
+    h=open(path+_b+"/dm_file.txt","wt")
+    for i in range(65536):
+        h.write(format(i,"04x")+"\txxxx\n")
 h.close()
 # start=time.time()
 l=[]
