@@ -1,0 +1,6 @@
+e000
+0000
+ffff
+ffff
+8000
+xxxx

@@ -1,0 +1,5 @@
+ffff
+0000
+b7fe
+e000
+xxxx
