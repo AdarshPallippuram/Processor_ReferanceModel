@@ -154,6 +154,7 @@ def addcsubb(Rn_ad,Rx_ad,Ry_ad,is_sub,C):   # add, add with carry, sub, sub with
                 Rn_b = d_to_b(-32768)
             else:
                 Rn_b = d_to_b(32767)
+            zvnc[1] = '0'
     if Rn_b[0] == '1':                  # AN checking
         zvnc[2] = '1'
     if int(Rn_b,2) == 0:                # AZ checking

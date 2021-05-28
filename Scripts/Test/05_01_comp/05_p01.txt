@@ -11,7 +11,14 @@ comp(r1,r1)
 dm(i0,m0) = astat   #2001
 comp(r1,r3)
 dm(i0,m0) = astat   #1004
-r4 = abcd
-r5 = bcde
-r6 = 8000
-
+r1 = abcd
+r2 = bcde
+r3 = 8000
+comp(r3,r1)
+dm(i0,m0) = astat   #0804
+comp(r1,r2)
+dm(i0,m0) = astat   #0404
+comp(r1,r1)
+dm(i0,m0) = astat   #0201
+comp(r1,r3)
+dm(i0,m0) = astat   #8100
