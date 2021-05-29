@@ -130,11 +130,11 @@ def astat_alu_wr(zvnc):
 def addcsubb(Rn_ad,Rx_ad,Ry_ad,is_sub,C):   # add, add with carry, sub, sub with borrow function
     Rx = b_to_d(get_from_reg('0000'+Rx_ad))
     Ry = b_to_d(get_from_reg('0000'+Ry_ad))
-    if Ry == -32768:
-        Ry = 32768
     CI = int(get_from_reg('01111100')[12])
     zvnc = ['0','0','0','0']
     if is_sub == '1':
+        if Ry == -32768:
+            Ry = 32768
         if C == '1':
             Rn = Rx - Ry + CI - 1
             zvnc[3] = is_AC(Rx,-Ry,CI,-1)   # AC checking
