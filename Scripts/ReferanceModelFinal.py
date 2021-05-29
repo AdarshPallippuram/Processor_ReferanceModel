@@ -6,7 +6,7 @@
 # inside a "Test" folder, i.e a1 - left shift is inside a folder "Test" in the script directory
 import os
 import time
-path=os.path.dirname(__file__)+"/Test/"          
+path=os.path.dirname(__file__)+"/Test/"
 #---------------------------------------------------------------------------
 # Reg banks, uregs and related dictionaries and functions
 #---------------------------------------------------------------------------
@@ -15,8 +15,8 @@ reg_bank={
     "R":{"0000":"XXXX","0001":"XXXX","0010":"XXXX","0011":"XXXX","0100":"XXXX","0101":"XXXX","0110":"XXXX","0111":"XXXX","1000":"XXXX","1001":"XXXX","1010":"XXXX","1011":"XXXX","1100":"XXXX","1101":"XXXX","1110":"XXXX","1111":"XXXX"},
     "I":{"0000":"XXXX","0001":"XXXX","0010":"XXXX","0011":"XXXX","0100":"XXXX","0101":"XXXX","0110":"XXXX","0111":"XXXX","1000":"XXXX","1001":"XXXX","1010":"XXXX","1011":"XXXX","1100":"XXXX","1101":"XXXX","1110":"XXXX","1111":"XXXX"},
     "M":{"0000":"XXXX","0001":"XXXX","0010":"XXXX","0011":"XXXX","0100":"XXXX","0101":"XXXX","0110":"XXXX","0111":"XXXX","1000":"XXXX","1001":"XXXX","1010":"XXXX","1011":"XXXX","1100":"XXXX","1101":"XXXX","1110":"XXXX","1111":"XXXX"},
-    "0110":{"0000":"0000000000000000","0001":"0000000000000000","0011":"0000000000000000","0100":"0000000000000000","0101":"0000000000000000"},
-    "0111":{"1011":"0000000000000000","1100":"0000000000000000","1110":"0000000000000000"}
+    "0110":{"0000":"0000000000000000","0001":"0000000000000000","0011":"0000000000000000","0100":"XXXX","0101":"0000000000000000"},
+    "0111":{"1011":"0000000000000000","1100":"0000000000000000","1110":"0000000000000001"}
 }
 reg={
     "0000":"R",
@@ -34,10 +34,10 @@ reg_name={
     "MODE1":"01111011",
     "ASTAT":"01111100",
     "STKY":"01111110"}
-def put_to_reg(inst,val):
-    reg_bank[reg[inst[0:4]]][inst[4:]]=val
-def get_from_reg(inst):
-    return reg_bank[reg[inst[0:4]]][inst[4:]]
+def put_to_reg(addr,val):
+    reg_bank[reg[addr[0:4]]][addr[4:]]=val
+def get_from_reg(addr):
+    return reg_bank[reg[addr[0:4]]][addr[4:]]
 
 #---------------------------------------------------------------------------
 # Miscellaneous Functions
@@ -539,25 +539,22 @@ def shifter(inst):
 #---------------------------------------------------------------------------
 
 def primary(OpCode):
-    if int(OpCode) == 0:
-        # print('nop')
-        time.sleep(3)
-    elif int(OpCode[:9]) == 1:
-        # print('idle')
-        time.sleep(10)
-    elif int(OpCode[:8]) == 1:
-        #print('rts')
-        # put_to_reg('01100011',get_from_reg('01100100'))
-        # deleting value in PCSTK not done
-        put_to_reg('01100100',"XXXX")
-    elif int(OpCode[:8]) == 10:
+    if int(OpCode[:8]) == 10:
         # print('PUSH PCSTK = <ureg>')
-        put_to_reg('01100100',OpCode[8:16])
+        if(int(get_from_reg("01111110"))==1):
+                put_to_reg('01100100',get_from_reg(OpCode[8:16]))
+                put_to_reg("01111110",format(2,"016b"))
+                put_to_reg("01100101",format(1,"016b"))     #PCSTKP
+        else:
+            put_to_reg("01100101","000001001")           #PCSTKP
+            put_to_reg("01111110",format(4,"016b"))
     elif int(OpCode[:8]) == 11:
         # print('<ureg> = POP PCSTK')
-        put_to_reg(OpCode[8:16],get_from_reg('01100100'))
-        # deleting value in PCSTK not done
-        put_to_reg('01100100',"XXXX")
+        if(int(get_from_reg("01111110"))==10):
+            put_to_reg(OpCode[8:16],get_from_reg('01100100'))
+            put_to_reg('01100100',"XXXX")
+            put_to_reg("01111110",format(1,"016b"))
+            put_to_reg("01100101",format(0,"016b"))     #PCSTKP
     elif int(OpCode[:6]) == 11:
         #print('immediate data(16-bits) -> ureg')
         put_to_reg(OpCode[8:16],OpCode[16:])
@@ -566,9 +563,8 @@ def primary(OpCode):
         # print('IF condition ureg1 = ureg2')
         # ureg1 as 'dest' and ureg2 as 'source'
         put_to_reg(OpCode[8:16],get_from_reg(OpCode[16:24]))
-        print("ureg:{}".format(get_from_reg(OpCode[8:16])))
     elif int(OpCode[1:6]) == 1001:
-        #print('IF condition DM(Ia,Mb) <-> ureg')
+        print('IF condition DM(Ia,Mb) <-> ureg')
         i_data=format(int(get_from_reg("00010"+OpCode[19:22]),2),"04x")
         m_data=get_from_reg("00100"+OpCode[22:25])
         h=open(path+_b+"/dm_file.txt","rt")
@@ -601,15 +597,11 @@ def primary(OpCode):
         i_data=format(i_data,"016b")
         put_to_reg("00010"+OpCode[19:22],i_data)
     elif int(OpCode[1:6]) == 1000:
-        print('IF condition modify (Ia,Mb)')
+        #print('IF condition modify (Ia,Mb)')
         i_data=get_from_reg("00010"+OpCode[19:22])
         m_data=get_from_reg("00100"+OpCode[22:25])
         i_data=format(int(i_data,2)+int(m_data,2),"016b")
         put_to_reg("00010"+OpCode[19:22],i_data)
-    elif int(OpCode[1:6]) == 1100:
-        print('IF condition JUMP (Md,Ic)')
-    elif int(OpCode[1:6]) == 1101:
-        print('IF condition JUMPR (Md,Ic)')
     elif int(OpCode[1]) == 1:
         # print('IF condition compute')
         if(OpCode[6:8]=="00"):
@@ -668,12 +660,49 @@ for i in f:
     l.append(i.strip("\n"))
 i=0
 while(i<len(l)):
+    jump=False
     if(l[i][0]=="0"):
         s=1
     else:
         s=condition(l[i][27:])
     if(s==1):
-        primary(l[i])
+        if int(l[i][:8]) == 1:
+            if(int(get_from_reg("01111110"))==1):
+                i=get_from_reg("01100100")
+                put_to_reg('01100100',"XXXX")
+                put_to_reg("01111110",format(1,"016b"))
+                put_to_reg("01100101",format(0,"016b"))     #PCSTKP
+        if int(l[i][3:6]) == 100:
+            print('IF condition JUMP (Md,Ic)')
+            jump=True
+            M=int(get_from_reg("00101"+l[i][22:25]),2)
+            I=int(get_from_reg("00011"+l[i][19:22]),2)
+            i=I+M
+            put_to_reg("01100000",format(i,"016b"))     #FADDR
+        if int(l[i][3:6]) == 101:
+            print('IF condition CALL (Md,Ic)')
+            jump=True
+            M=int(get_from_reg("00101"+l[i][22:25]),2)
+            I=int(get_from_reg("00011"+l[i][19:22]),2)
+            if(int(get_from_reg("01111110"))==1):
+                put_to_reg("01100100",format(i,"016b"))     #PCSTK
+                i=I+M
+                put_to_reg("01100000",format(i,"016b"))     #FADDR
+                put_to_reg("01111110",format(2,"016b"))
+                put_to_reg("01100101",format(1,"016b"))     #PCSTKP
+            else:
+                put_to_reg("01111110",format(4,"016b"))
+        if((jump==False) or ((jump==True) and (i<len(l)))):
+            if(i<len(l)-2):
+                put_to_reg("01100000",format(i+2,"016b"))   #FADDR
+            if(i<len(l)-1):
+                put_to_reg("01100001",format(i+1,"016b"))     #DADDR  
+            put_to_reg("01100011",format(i,"016b"))         #PC
+            print(i)
+            primary(l[i])
+            print(get_from_reg("01111100"))
+        else:
+            continue
     i=i+1
 for i in range(3):
     a=format(i,"04b")
