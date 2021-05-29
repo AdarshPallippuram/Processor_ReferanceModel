@@ -15,4 +15,4 @@ dm(i0,m0) = astat	#0005 000b
 mode1 = 0001
 r0 = r1 + r1
 dm(i0,m0) = r0		#0006 8000, cnvz 1110
-dm(i0,m0) = astat	#0007 000e
+dm(i0,m0) = astat	#0007 000c

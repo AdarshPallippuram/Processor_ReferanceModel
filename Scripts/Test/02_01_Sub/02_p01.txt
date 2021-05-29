@@ -23,4 +23,3 @@ mode1 = 0001
 r0 = r2 - r1
 dm(i0,m0) = r0      #d555
 dm(i0,m0) = astat   #0004
-
