@@ -6,6 +6,8 @@
 # inside a "Test" folder, i.e a1 - left shift is inside a folder "Test" in the script directory
 import os
 import time
+import Assembler
+from tkinter.filedialog import askopenfilename
 path=os.path.dirname(__file__)+"/Test/"
 #---------------------------------------------------------------------------
 # Reg banks, uregs and related dictionaries and functions
@@ -388,8 +390,10 @@ def multi(op):
                     rn=mrf1[-16:]
             elif(op[2]=="0"):
                 if(op[5]=="0"):
+                    mrf1=mrf
                     rn=mrf[-16:]
                 else:
+                    mrf1=mrf
                     rn=mrf[8:24]
             if((int(op[3])|int(op[4]))==1 and mrf1[0]=="1"):
                 mn="1"
@@ -400,6 +404,7 @@ def multi(op):
             mrf1=unsigned_mul(rx,ry)
         else:                               #signed multiplication
             mrf1=signed_mul(rx,ry,op[4],op[3])
+            print(mrf1)
         if(op[5]=="1" and op[6]=="1"):
             if(mrf1[-16]=="0"):
                 mrf1=mrf1[-40:-16]+16*"0"
@@ -450,9 +455,9 @@ def multi(op):
                 mrf1 = format(mrf1,'040b')
             if(mrf1[0]=="-"):
                 mrf1=compliment(mrf1)
-            if(int(op[3])|int(op[4])==1):
-                if(mrf1[0:8]=="11111111"):
-                    mn="1"
+        if(int(op[3])|int(op[4])==1):
+            if(mrf1[0:8]=="11111111"):
+                mn="1"
         if(op[5]=="1"):
             if(int(op[3])|int(op[4])==1):
                 if(("1" in mrf1[0:17]) and ("0" in mrf1[0:17])):
@@ -494,17 +499,20 @@ def shifter(inst):
         R_val.append(get_from_reg(R[i]))
         i+=1
     if(inst[1:3]=="00"):
+        temp=R_val[0]
         if(R_val[1][0]=="1"):
             shift=int(compliment(R_val[1]),2)
             R_val[0]=R_val[0][0]*shift+R_val[0]
             R_val[0]=R_val[0][0:16]
         else:
             shift=int(R_val[1][1:],2)
-            R_val[0]=format(int(R_val[0],2)*(2**(shift+1)),"016b")
-            R_val[0]=R_val[0][-17:-1]
-            if(shift>0):
-                sv="1"
+            R_val[0]=format(int(R_val[0],2)*(2**(shift)),"016b")
+            R_val[0]=R_val[0][-16:]
         put_to_reg(R[0],R_val[0])
+        if(temp[0]!=R_val[0][0]):
+            print(temp)
+            print(R_val[0])
+            sv="1"
         if(int(R_val[0],2)==0):
             sz="1"
     elif(inst[1:3]=="01"):
@@ -548,6 +556,7 @@ def primary(OpCode):
         else:
             put_to_reg("01100101","000001001")           #PCSTKP
             put_to_reg("01111110",format(4,"016b"))
+        print(get_from_reg('01100100'))
     elif int(OpCode[:8]) == 11:
         # print('<ureg> = POP PCSTK')
         if(int(get_from_reg("01111110"))==10):
@@ -555,14 +564,17 @@ def primary(OpCode):
             put_to_reg('01100100',"XXXX")
             put_to_reg("01111110",format(1,"016b"))
             put_to_reg("01100101",format(0,"016b"))     #PCSTKP
+        print(get_from_reg(OpCode[8:16]))
     elif int(OpCode[:6]) == 11:
         #print('immediate data(16-bits) -> ureg')
         put_to_reg(OpCode[8:16],OpCode[16:])
         # print(OpCode[8:16],get_from_reg(OpCode[8:16]))
+        print(get_from_reg(OpCode[8:16]))
     elif int(OpCode[1:6]) == 1:
         # print('IF condition ureg1 = ureg2')
         # ureg1 as 'dest' and ureg2 as 'source'
         put_to_reg(OpCode[8:16],get_from_reg(OpCode[16:24]))
+        print(get_from_reg(OpCode[8:16]))
     elif int(OpCode[1:6]) == 1001:
         print('IF condition DM(Ia,Mb) <-> ureg')
         i_data=format(int(get_from_reg("00010"+OpCode[19:22]),2),"04x")
@@ -600,7 +612,10 @@ def primary(OpCode):
         #print('IF condition modify (Ia,Mb)')
         i_data=get_from_reg("00010"+OpCode[19:22])
         m_data=get_from_reg("00100"+OpCode[22:25])
-        i_data=format(int(i_data,2)+int(m_data,2),"016b")
+        i_data=int(i_data,2)+int(m_data,2)
+        if(i_data>65536):
+            i_data=i_data-65536
+        i_data=format(i_data,"016b")
         put_to_reg("00010"+OpCode[19:22],i_data)
     elif int(OpCode[1]) == 1:
         # print('IF condition compute')
@@ -685,7 +700,7 @@ while(i<len(l)):
             M=int(get_from_reg("00101"+l[i][22:25]),2)
             I=int(get_from_reg("00011"+l[i][19:22]),2)
             if(int(get_from_reg("01111110"))==1):
-                put_to_reg("01100100",format(i,"016b"))     #PCSTK
+                put_to_reg("01100100",format(i+1,"016b"))     #PCSTK
                 i=I+M
                 put_to_reg("01100000",format(i,"016b"))     #FADDR
                 put_to_reg("01111110",format(2,"016b"))
