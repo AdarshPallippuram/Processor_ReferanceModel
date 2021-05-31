@@ -734,11 +734,9 @@ for i in range(3):
 for i in reg_name.keys():
     value=reg_bank[reg_name[i][0:4]][reg_name[i][4:]]
     if(value!="XXXX"):
-        if i != 'ASTAT':
-            value=ubin_to_hex(value)
+        value=ubin_to_hex(value)
     g.write("{} : {}".format(i,value))
     g.write("\n")
-print()
 print("Register values stored in reg_dump.txt")
 print("Data Memory dumped in dm_file.txt")
 f=open(path+_b+"/dm_file.txt","rt")
@@ -763,4 +761,4 @@ else:
     print('--------------------------------------------------------')
     print('--------------------------------------------------------')
 end=time.time()
-print("Time taken to complete program = %s"%(end-Assembler.start))
+print("Time taken to complete program = %s"%(end-start))
