@@ -59,7 +59,7 @@ def b_to_d(b):                          # Function converts binary(b) to decimal
     else:
         return int(b,2)
 def d_to_b(d):                          # Function converts decimal(d) to binary(b)
-    n = '{:>016b}'.format(abs(d))
+    n = '{:>016b}'.format(abs(d))[-16:]
     if d < 0:
         return compliment(n)
     else:
@@ -134,6 +134,8 @@ def addcsubb(Rn_ad,Rx_ad,Ry_ad,is_sub,C):   # add, add with carry, sub, sub with
     CI = int(get_from_reg('01111100')[12])
     zvnc = ['0','0','0','0']
     if is_sub == '1':
+        if Ry == -32768:
+            Ry = 32768
         if C == '1':
             Rn = Rx - Ry + CI - 1
             zvnc[3] = is_AC(Rx,-Ry,CI,-1)   # AC checking
@@ -148,17 +150,18 @@ def addcsubb(Rn_ad,Rx_ad,Ry_ad,is_sub,C):   # add, add with carry, sub, sub with
             Rn = Rx + Ry
             zvnc[3] = is_AC(Rx,Ry,0,0)      # AC checking
     Rn_b = d_to_b(Rn)                    
-    if Rn_b[0] == '1':                  # AN checking
-        zvnc[2] = '1'
-    if int(Rn_b,2) == 0:                # AZ checking
-        zvnc[0] = '1'
     if Rn not in range(-32768,32768):   # AV checking
         zvnc[1] = '1'
-        if int(reg_bank['0111']['1011']) == 1:
+        if int(reg_bank['0111']['1011']) == 1:  # Checking for ALU sat bit
             if Rn < -32768:
                 Rn_b = d_to_b(-32768)
             else:
                 Rn_b = d_to_b(32767)
+            # zvnc[1] = '0'
+    if Rn_b[0] == '1':                  # AN checking
+        zvnc[2] = '1'
+    if int(Rn_b,2) == 0:                # AZ checking
+        zvnc[0] = '1'
     astat_alu_wr(zvnc)
     put_to_reg('0000'+Rn_ad,Rn_b)              # Rn reg updating
 
@@ -731,9 +734,11 @@ for i in range(3):
 for i in reg_name.keys():
     value=reg_bank[reg_name[i][0:4]][reg_name[i][4:]]
     if(value!="XXXX"):
-        value=ubin_to_hex(value)
+        if i != 'ASTAT':
+            value=ubin_to_hex(value)
     g.write("{} : {}".format(i,value))
     g.write("\n")
+print()
 print("Register values stored in reg_dump.txt")
 print("Data Memory dumped in dm_file.txt")
 f=open(path+_b+"/dm_file.txt","rt")
@@ -746,8 +751,16 @@ for i,j in zip(f,g):
         __o=False
         print("Error in {}".format(i[0:5]))
 if(__o==False):
+    print('----------------------------------------------------------------------')
+    print('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
     print("Difference exist between Verilog Simulation and Referance Model output")
+    print('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
+    print('----------------------------------------------------------------------')
 else:
-    print("Verilog Simulation and Referance model outputs are equal")
+    print('--------------------------------------------------------')
+    print('--------------------------------------------------------')
+    print("Verilog Simulation and Referance model outputs are EQUAL")
+    print('--------------------------------------------------------')
+    print('--------------------------------------------------------')
 end=time.time()
-print("Time taken to complete program = %s"%(end-start))
+print("Time taken to complete program = %s"%(end-Assembler.start))
