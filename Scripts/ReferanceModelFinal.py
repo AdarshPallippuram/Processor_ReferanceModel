@@ -37,6 +37,8 @@ reg_name={
     "ASTAT":"01111100",
     "STKY":"01111110"}
 def put_to_reg(addr,val):
+    if(addr=="01111011"):
+        val=15*"0"+val[-1]
     reg_bank[reg[addr[0:4]]][addr[4:]]=val
 def get_from_reg(addr):
     return reg_bank[reg[addr[0:4]]][addr[4:]]
