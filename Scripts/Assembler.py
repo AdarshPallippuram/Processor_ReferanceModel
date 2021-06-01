@@ -202,7 +202,7 @@ def compute(com):
         return Comp_code
 ur1="^[ ]?[A,C,D,F,I,L,M,P,S,U][A,C,M,O,R,S,T,U][A,D,I,K,N,R,S,T]?[A,D,E,L,S,T,Y]?[C,K,L,R,T,1,2]?[N,P,1,2]?[T]?[R]?[ ]?$"
 d="^[ ]?DM[ ]?[(][ ]?I[0-7][ ]?,[ ]?M[0-7][ ]?[)][ ]?$"
-def Assembler(x):
+def Primary(x):
     OpCode = "00000000000000000000000000000000"
     x=x.upper()
     while(x[-1]==" " or x[-1]=="\t"):
@@ -263,7 +263,7 @@ def Assembler(x):
             OpCode=OpCode[0]+"01000"+OpCode[6:19]+register(re.findall("I[0-7]",x)[0])[5:]+register(re.findall("M[0-7]",x)[0])[5:]+"00"+conditions(condition)
         elif(re.match("JUMP[ ]?[(][ ]?M[1,8,9][0-5]*[ ]?,[ ]?I[1,8,9][0-5]*[ ]?[)][ ]?$",x)):
             OpCode=OpCode[0]+"01100"+OpCode[6:19]+register(re.findall("I[1,8,9][0-5]*",x)[0])[5:]+register(re.findall("M[1,8,9][0-5]*",x)[0])[5:]+"00"+conditions(condition)
-        elif(re.match("JUMPR[ ]?[(][ ]?M[1,8,9][0-5]*[ ]?,[ ]?I[1,8,9][0-5]*[ ]?[)][ ]?$",x)):
+        elif(re.match("CALL[ ]?[(][ ]?M[1,8,9][0-5]*[ ]?,[ ]?I[1,8,9][0-5]*[ ]?[)][ ]?$",x)):
             OpCode=OpCode[0]+"01101"+OpCode[6:19]+register(re.findall("I[1,8,9][0-5]*",x)[0])[5:]+register(re.findall("M[1,8,9][0-5]*",x)[0])[5:]+"00"+conditions(condition)
         else:
             OpCode=OpCode[0]+"10000"+compute(x)+conditions(condition)
@@ -280,10 +280,11 @@ def clear():
     else:
         _=system("clear")
 a=input("Enter name of folder containing instructions:")
-start=time.time()
-g=open(PM_LOCATE+a+"/"+a[:2]+"_p"+a[3:5]+".txt","rt")                                  #Changed
+file_name=a.split(" ")[0]
+g=open(PM_LOCATE+a+"/"+file_name[0]+"_p"+file_name[1:]+".txt","rt")                                  #Changed
 #b=input("Enter name of OpCode Destination file:")
 f=open(PM_LOCATE+a+"/pm_file.txt","wt")                                      #Changed
+f.write(16*"1"+16*"0"+"\n")
 l=[]
 rewrite=False
 instr_list=[]
@@ -294,11 +295,17 @@ while(i<len(l)):
     time.sleep(.1)
     instr=l[i]
     i=i+1
-    if(instr!=" " or instr!="\n" or instr!="\t" or instr!=""):
-        if(instr.lower()==".memcheck"):
+    if(instr!=" " and instr!="\n" or instr!="\t" or instr!=""):
+        if(re.match(".memcheck[ ]?",instr.lower())):
             break
         print(instr)
         instr_list.append(instr)
+        if(re.match(".CALL[ ]?[(][ ]?[0-9]+[ ]?[)][ ]?",instr.upper())):
+            f.write(16*"1"+format(int(re.findall("[0-9]+",instr)[0]),"016b")+"\n")
+            instr=l[i]
+            i=i+1
+            print(instr)
+            instr_list.append(instr)
         if("#" in instr):
             inst = re.split("#",instr)[0]
             if(re.match("^[ ]*#",instr)):
@@ -315,8 +322,10 @@ while(i<len(l)):
                 continue
         else:
             inst = instr
-        if(len(instr)>0):
-            OpCode=Assembler(inst)
+        if(len(instr)>2):
+            OpCode=Primary(inst)
+        else:
+            continue
         if("ERROR" in OpCode):
             clear()
             instr_list.pop()
@@ -346,13 +355,12 @@ while(i<len(l)):
                 instr_list.append(instr)
                 print(instr,end='')
                 i=i+1
-print("\nOpcodes saved in pm_file.txt")                     #Changed
+print("\nOpcodes saved in pm_file.txt")                                                          #Changed
 f.close()
 g.close()
 if(rewrite==True):
-    g=open(PM_LOCATE+a+"/Input.txt","wt")                              #Changed
+    g=open(PM_LOCATE+a+"/"+file_name[0]+"_p"+file_name[1:]+".txt","rt")                          #Changed
     for i in range(len(l)):
         g.write(l[i])
         g.write('\n')
     g.close()
-# time.sleep(2)
