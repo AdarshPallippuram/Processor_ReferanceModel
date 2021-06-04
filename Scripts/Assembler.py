@@ -9,6 +9,7 @@ import os
 from os import system,name
 import re
 import time
+import shutil
 
 # -------------------------------------------------------------------------------------------------------------------------------------
 
@@ -252,13 +253,13 @@ def Primary(x):
             else:
                 OpCode=OpCode[0]+"0000100"+register(x.split("=")[0])+register(x.split("=")[-1])+"000"+conditions(condition)
         elif(re.match("^DM[ ]?[(][ ]?I[0-7][ ]?,[ ]?M[0-7][ ]?[)][ ]?$",x.split("=")[0])):
-            OpCode=OpCode[0]+"0100100"+register(x.split("=")[-1])+"000"+register(re.findall("I[0-7]",x)[0])[5:]+register(re.findall("M[0-7]",x)[0])[5:]+"10"+conditions(condition)
+            OpCode=OpCode[0]+"0100100"+register(x.split("=")[-1])+"000"+register(re.findall("I[0-7]",x.split("=")[0])[0])[5:]+register(re.findall("M[0-7]",x.split("=")[0])[0])[5:]+"10"+conditions(condition)
         elif(re.match("^[ ]?DM[ ]?[(][ ]?I[0-7][ ]?,[ ]?M[0-7][ ]?[)][ ]?$",x.split("=")[-1])):
             temp=x.split("=")[0]
             if(("FADDR" in temp) or ("DADDR" in temp) or (re.match("^[ ]?PC[ ]?$",temp)) or ("STKY" in temp) or ("PCSTKP" in temp)):
                 OpCode="ERROR"
             else:
-                OpCode=OpCode[0]+"0100100"+register(x.split("=")[0])+"000"+register(re.findall("I[0-7]",x)[0])[5:]+register(re.findall("M[0-7]",x)[0])[5:]+"00"+conditions(condition)
+                OpCode=OpCode[0]+"0100100"+register(x.split("=")[0])+"000"+register(re.findall("I[0-7]",x.split("=")[-1])[0])[5:]+register(re.findall("M[0-7]",x.split("=")[-1])[0])[5:]+"00"+conditions(condition)
         elif(re.match("MODIFY[ ]?[(][ ]?I[0-7][ ]?,[ ]?M[0-7][ ]?[)][ ]?$",x)):
             OpCode=OpCode[0]+"01000"+OpCode[6:19]+register(re.findall("I[0-7]",x)[0])[5:]+register(re.findall("M[0-7]",x)[0])[5:]+"00"+conditions(condition)
         elif(re.match("JUMP[ ]?[(][ ]?M[1,8,9][0-5]*[ ]?,[ ]?I[1,8,9][0-5]*[ ]?[)][ ]?$",x)):
