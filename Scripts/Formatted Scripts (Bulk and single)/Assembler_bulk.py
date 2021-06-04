@@ -361,7 +361,7 @@ def Assembler(a):
     f.close()
     g.close()
     if(rewrite==True):
-        g=open(PM_LOCATE+a+"/"+file_name[0]+"_p"+file_name[1:]+".txt","rt")                          #Changed
+        g=open(PM_LOCATE+a+"/"+file_name[0]+"_p"+file_name[1:]+".txt","wt")                          #Changed
         for i in range(len(l)):
             g.write(l[i])
             g.write('\n')
