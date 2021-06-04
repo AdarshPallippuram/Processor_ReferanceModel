@@ -555,30 +555,50 @@ def primary(OpCode):
     if int(OpCode[:8]) == 10:
         # print('PUSH PCSTK = <ureg>')
         if(int(get_from_reg("01111110"))==1):
-                put_to_reg('01100100',get_from_reg(OpCode[8:16]))
-                put_to_reg("01111110",format(2,"016b"))
-                put_to_reg("01100101",format(1,"016b"))     #PCSTKP
+            put_to_reg('01100100',get_from_reg(OpCode[8:16]))
+            put_to_reg("01111110",format(2,"016b"))
+            put_to_reg("01100101",format(1,"016b"))     #PCSTKP
+            print(get_from_reg("01111110"))
         else:
             put_to_reg("01100101","000001001")           #PCSTKP
             put_to_reg("01111110",format(4,"016b"))
-        print(get_from_reg('01100100'))
     elif int(OpCode[:8]) == 11:
         # print('<ureg> = POP PCSTK')
-        if(int(get_from_reg("01111110"))==10):
+        if(int(get_from_reg("01111110"))==10 or int(get_from_reg("01111110"))==100):
             put_to_reg(OpCode[8:16],get_from_reg('01100100'))
             put_to_reg('01100100',"XXXX")
             put_to_reg("01111110",format(1,"016b"))
             put_to_reg("01100101",format(0,"016b"))     #PCSTKP
         print(get_from_reg(OpCode[8:16]))
     elif int(OpCode[:6]) == 11:
+        if(OpCode[8:16]=="01100100"):
+            if(int(get_from_reg("01111110"))==1):
+                put_to_reg('01100100',OpCode[16:])
+                put_to_reg("01111110",format(2,"016b"))
+                put_to_reg("01100101",format(1,"016b"))     #PCSTKP
+                print(get_from_reg("01111110"))
+            else:
+                put_to_reg("01100101","000001001")           #PCSTKP
+                put_to_reg("01111110",format(4,"016b"))
+        else:
         #print('immediate data(16-bits) -> ureg')
-        put_to_reg(OpCode[8:16],OpCode[16:])
+            put_to_reg(OpCode[8:16],OpCode[16:])
         # print(OpCode[8:16],get_from_reg(OpCode[8:16]))
         print(get_from_reg(OpCode[8:16]))
     elif int(OpCode[1:6]) == 1:
+        if(OpCode[8:16]=="01100100"):
+            if(int(get_from_reg("01111110"))==1):
+                put_to_reg('01100100',get_from_reg(OpCode[16:24]))
+                put_to_reg("01111110",format(2,"016b"))
+                put_to_reg("01100101",format(1,"016b"))     #PCSTKP
+                print(get_from_reg("01111110"))
+            else:
+                put_to_reg("01100101","000001001")           #PCSTKP
+                put_to_reg("01111110",format(4,"016b"))
+        else:
         # print('IF condition ureg1 = ureg2')
         # ureg1 as 'dest' and ureg2 as 'source'
-        put_to_reg(OpCode[8:16],get_from_reg(OpCode[16:24]))
+            put_to_reg(OpCode[8:16],get_from_reg(OpCode[16:24]))
         print(get_from_reg(OpCode[8:16]))
     elif int(OpCode[2:6]) == 1001:
         print('IF condition DM(Ia,Mb) <-> ureg')
@@ -675,9 +695,10 @@ start=time.time()
 l=[]
 u=False
 for i in f:
-    l.append(i.strip("\n"))
-    if(i[2:6]=="1001" and i[25]=="1"):
-        u=True
+    if(i[:16]!="1"*16):
+        l.append(i.strip("\n"))
+        if(i[2:6]=="1001" and i[25]=="0"):
+            u=True
 if(u==True):
     try:
         h=open(path+_b+"/dm_file.txt","rt")
