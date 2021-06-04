@@ -6,8 +6,6 @@
 # inside a "Test" folder, i.e a1 - left shift is inside a folder "Test" in the script directory
 import os
 import time
-import Assembler
-from tkinter.filedialog import askopenfilename
 path=os.path.dirname(__file__)+"/Test/"
 #---------------------------------------------------------------------------
 # Reg banks, uregs and related dictionaries and functions
@@ -159,7 +157,8 @@ def addcsubb(Rn_ad,Rx_ad,Ry_ad,is_sub,C):   # add, add with carry, sub, sub with
                 Rn_b = d_to_b(-32768)
             else:
                 Rn_b = d_to_b(32767)
-            # zvnc[1] = '0'
+            zvnc[1] = '0'
+            zvnc[3] = '0'
     if Rn_b[0] == '1':                  # AN checking
         zvnc[2] = '1'
     if int(Rn_b,2) == 0:                # AZ checking
@@ -219,6 +218,7 @@ def negate(Rn_ad,Rx_ad):
         if int(reg_bank['0111']['1011']) == 1:
             Rn = 32767
             zvnc[2] = '0'
+            zvnc[1] = '0'
     put_to_reg('0000'+Rn_ad,d_to_b(Rn))
     astat_alu_wr(zvnc)
 
@@ -580,7 +580,7 @@ def primary(OpCode):
         # ureg1 as 'dest' and ureg2 as 'source'
         put_to_reg(OpCode[8:16],get_from_reg(OpCode[16:24]))
         print(get_from_reg(OpCode[8:16]))
-    elif int(OpCode[1:6]) == 1001:
+    elif int(OpCode[2:6]) == 1001:
         print('IF condition DM(Ia,Mb) <-> ureg')
         i_data=format(int(get_from_reg("00010"+OpCode[19:22]),2),"04x")
         m_data=get_from_reg("00100"+OpCode[22:25])
@@ -606,7 +606,10 @@ def primary(OpCode):
             for j in h:
                 if(i_data in j):
                     ureg_data=j.split("\t")[-1].strip("\n")
-            put_to_reg(OpCode[8:16],format(int(ureg_data,16),"016b"))
+            if(ureg_data!="xxxx"):
+                put_to_reg(OpCode[8:16],format(int(ureg_data,16),"016b"))
+            else:
+                put_to_reg(OpCode[8:16],"XXXX")
             h.close()
         i_data=int(i_data,16)+int(m_data,2)
         if(i_data>65536):
@@ -664,20 +667,30 @@ def condition(a):
 #---------------------------------------------------------------------------
 
 _b=input("Enter name of OpCode folder:")
+print(_b)
 file_name=_b.split(" ")[0]
 f=open(path+_b+"/pm_file.txt","rt")
 g=open(path+_b+"/reg_dump.txt","wt")
-try:
-    h=open(path+_b+"/dm_file.txt","rt")
-except:
+start=time.time()
+l=[]
+u=False
+for i in f:
+    l.append(i.strip("\n"))
+    if(i[2:6]=="1001" and i[25]=="1"):
+        u=True
+if(u==True):
+    try:
+        h=open(path+_b+"/dm_file.txt","rt")
+    except:
+        h=open(path+_b+"/dm_file.txt","wt")
+        for i in range(65536):
+            h.write(format(i,"04x")+"\txxxx\n")
+    h.close()
+else:
     h=open(path+_b+"/dm_file.txt","wt")
     for i in range(65536):
         h.write(format(i,"04x")+"\txxxx\n")
-h.close()
-start=time.time()
-l=[]
-for i in f:
-    l.append(i.strip("\n"))
+    h.close()
 i=0
 while(i<len(l)):
     jump=False
@@ -713,9 +726,8 @@ while(i<len(l)):
             else:
                 put_to_reg("01111110",format(4,"016b"))
         if((jump==False) or ((jump==True) and (i<len(l)))):
-            if(i<len(l)-2):
-                put_to_reg("01100000",format(i+2,"016b"))   #FADDR
             if(i<len(l)-1):
+                put_to_reg("01100000",format(i+2,"016b"))   #FADDR
                 put_to_reg("01100001",format(i+1,"016b"))     #DADDR  
             put_to_reg("01100011",format(i,"016b"))         #PC
             print(i)
@@ -764,3 +776,4 @@ else:
     print('--------------------------------------------------------')
 end=time.time()
 print("Time taken to complete program = %s"%(end-start))
+
