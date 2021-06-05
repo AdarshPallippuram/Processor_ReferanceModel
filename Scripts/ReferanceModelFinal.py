@@ -409,7 +409,7 @@ def multi(op):
             mrf1=unsigned_mul(rx,ry)
         else:                               #signed multiplication
             mrf1=signed_mul(rx,ry,op[4],op[3])
-            print(mrf1)
+        print(mrf1)
         if(op[5]=="1" and op[6]=="1"):
             if(mrf1[-16]=="0"):
                 mrf1=mrf1[-40:-16]+16*"0"
@@ -429,10 +429,12 @@ def multi(op):
             if(op[5]=="1"):
                 mrf1=fbin_to_decimal(mrf,int(op[3])|int(op[4]))+fbin_to_decimal(mrf1,int(op[3])|int(op[4]))
                 if(mrf1<(-1)):
-                    val=int("ff80000000",16)
+                    if(int(op[3])|int(op[4])==1):
+                        val=int("ff80000000",16)
                     mrf1=mrf1+1
                 if(mrf1>1):
-                    val=int("007fffffff",16)
+                    if(int(op[3])|int(op[4])==1):
+                        val=int("007fffffff",16)
                     mrf1=mrf1-1
                 mrf1=format(val+int(decimal_to_fbin(mrf1,int(op[3])|int(op[4])),2),"040b")[-40:]
             elif(op[3:5]=="00"): 
@@ -446,10 +448,12 @@ def multi(op):
             if(op[5]=="1"):
                 mrf1= fbin_to_decimal(mrf,int(op[3])|int(op[4]))-fbin_to_decimal(mrf1,int(op[3])|int(op[4]))
                 if(mrf1<(-1)):
-                    val=int("ff80000000",16)
+                    if(int(op[3])|int(op[4])==1):
+                        val=int("ff80000000",16)
                     mrf1=mrf1+1
                 if(mrf1>1):
-                    val=int("007fffffff",16)
+                    if(int(op[3])|int(op[4])==1):
+                        val=int("007fffffff",16)
                     mrf1=mrf1-1
                 mrf1=format(val+int(decimal_to_fbin(mrf1,int(op[3])|int(op[4])),2),"040b")[-40:]
             elif(op[3:5]=="00"):
@@ -481,6 +485,7 @@ def multi(op):
             rn=mrf1[8:24]
         else:
             rn=mrf1[24:]
+        print(mrf1)
     if(op[2]=="0"):
         put_to_reg(Rn,rn)
     else:
