@@ -428,10 +428,12 @@ def multi(op):
             if(op[5]=="1"):
                 mrf1=fbin_to_decimal(mrf,int(op[3])|int(op[4]))+fbin_to_decimal(mrf1,int(op[3])|int(op[4]))
                 if(mrf1<(-1)):
-                    val=int("ff80000000",16)
+                    if(int(op[3])|int(op[4])==1):
+                        val=int("ff80000000",16)
                     mrf1=mrf1+1
                 if(mrf1>1):
-                    val=int("007fffffff",16)
+                    if(int(op[3])|int(op[4])==1):
+                        val=int("007fffffff",16)
                     mrf1=mrf1-1
                 mrf1=format(val+int(decimal_to_fbin(mrf1,int(op[3])|int(op[4])),2),"040b")[-40:]
             elif(op[3:5]=="00"): 
@@ -445,10 +447,12 @@ def multi(op):
             if(op[5]=="1"):
                 mrf1= fbin_to_decimal(mrf,int(op[3])|int(op[4]))-fbin_to_decimal(mrf1,int(op[3])|int(op[4]))
                 if(mrf1<(-1)):
-                    val=int("ff80000000",16)
+                    if(int(op[3])|int(op[4])==1):
+                        val=int("ff80000000",16)
                     mrf1=mrf1+1
                 if(mrf1>1):
-                    val=int("007fffffff",16)
+                    if(int(op[3])|int(op[4])==1):
+                        val=int("007fffffff",16)
                     mrf1=mrf1-1
                 mrf1=format(val+int(decimal_to_fbin(mrf1,int(op[3])|int(op[4])),2),"040b")[-40:]
             elif(op[3:5]=="00"):
