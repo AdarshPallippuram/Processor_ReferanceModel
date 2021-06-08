@@ -285,7 +285,7 @@ file_name=a.split(" ")[0]
 g=open(PM_LOCATE+a+"/"+file_name[0]+"_p"+file_name[1:]+".txt","rt")                                  #Changed
 #b=input("Enter name of OpCode Destination file:")
 f=open(PM_LOCATE+a+"/pm_file.txt","wt")                                      #Changed
-f.write(16*"1"+16*"0"+"\n")
+f.write(format(int(16*"1"+16*"0",2),"08X")+"\n")
 l=[]
 rewrite=False
 instr_list=[]
@@ -301,10 +301,12 @@ while(i<len(l)):
             break
         print(instr)
         instr_list.append(instr)
-        if(re.match(".CALL[ ]?[(][ ]?[0-9]+[ ]?[)][ ]?",instr.upper())):
-            f.write(16*"1"+format(int(re.findall("[0-9]+",instr)[0],16),"016b")+"\n")
+        if(re.match(".CALL[ ]?[(][ ]?[0-9,A-F]+[ ]?[)][ ]?",instr.upper())):
+            f.write(format(int(16*"1"+format(int(re.findall("[0-9,A-F]+",instr)[1],16),"016b"),2),"08X")+"\n")
             instr=l[i]
             i=i+1
+            if(re.match(".memcheck[ ]?",instr.lower())):
+                break
             print(instr)
             instr_list.append(instr)
         if("#" in instr):
@@ -347,7 +349,7 @@ while(i<len(l)):
             l[i]=instr
             rewrite=True
         else:
-            f.write(OpCode)
+            f.write(format(int(OpCode,2),"08X"))
             f.write("\n")
         if("/*" in instr):
             while("*/" not in instr):
