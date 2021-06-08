@@ -286,7 +286,7 @@ def Assembler(a):
     g=open(PM_LOCATE+a+"/"+file_name[0]+"_p"+file_name[1:]+".txt","rt")                                  #Changed
     #b=input("Enter name of OpCode Destination file:")
     f=open(PM_LOCATE+a+"/pm_file.txt","wt")                                      #Changed
-    f.write(16*"1"+16*"0"+"\n")
+    f.write(format(int(16*"1"+16*"0",2),"08X")+"\n")
     l=[]
     rewrite=False
     instr_list=[]
