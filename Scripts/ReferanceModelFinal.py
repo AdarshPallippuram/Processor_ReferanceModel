@@ -701,7 +701,7 @@ l=[]
 u=False
 for i in f:
     if(i[:16]!="1"*16):
-        l.append(i.strip("\n"))
+        l.append(hex_to_ubin(i.strip("\n")))
         if(i[2:6]=="1001" and i[25]=="0"):
             u=True
 if(u==True):
