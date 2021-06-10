@@ -9,7 +9,6 @@ import os
 from os import system,name
 import re
 import time
-import shutil
 
 # -------------------------------------------------------------------------------------------------------------------------------------
 
@@ -263,8 +262,12 @@ def Primary(x):
         elif(re.match("MODIFY[ ]?[(][ ]?I[0-7][ ]?,[ ]?M[0-7][ ]?[)][ ]?$",x)):
             OpCode=OpCode[0]+"01000"+OpCode[6:19]+register(re.findall("I[0-7]",x)[0])[5:]+register(re.findall("M[0-7]",x)[0])[5:]+"00"+conditions(condition)
         elif(re.match("JUMP[ ]?[(][ ]?M[1,8,9][0-5]*[ ]?,[ ]?I[1,8,9][0-5]*[ ]?[)][ ]?$",x)):
+            if(("I1"==re.findall("I[1,8,9][0-5]*",x)[0]) or ("M1"==re.findall("M[1,8,9][0-5]*",x)[0])):
+                return "ERROR"
             OpCode=OpCode[0]+"01100"+OpCode[6:19]+register(re.findall("I[1,8,9][0-5]*",x)[0])[5:]+register(re.findall("M[1,8,9][0-5]*",x)[0])[5:]+"00"+conditions(condition)
         elif(re.match("CALL[ ]?[(][ ]?M[1,8,9][0-5]*[ ]?,[ ]?I[1,8,9][0-5]*[ ]?[)][ ]?$",x)):
+            if(("I1"==re.findall("I[1,8,9][0-5]*",x)[0]) or ("M1"==re.findall("M[1,8,9][0-5]*",x)[0])):
+                return "ERROR"
             OpCode=OpCode[0]+"01101"+OpCode[6:19]+register(re.findall("I[1,8,9][0-5]*",x)[0])[5:]+register(re.findall("M[1,8,9][0-5]*",x)[0])[5:]+"00"+conditions(condition)
         else:
             OpCode=OpCode[0]+"10000"+compute(x)+conditions(condition)
@@ -296,68 +299,68 @@ while(i<len(l)):
     time.sleep(.1)
     instr=l[i]
     i=i+1
-    if(instr!=" " and instr!="\n" and instr!="\t" and instr!=""):
+    if(re.match(".memcheck[ ]?",instr.lower())):
+        break
+    print(instr)
+    instr_list.append(instr)
+    if(re.match(".CALL[ ]?[(][ ]?[0-9,A-F]+[ ]?[)][ ]?",instr.upper())):
+        f.write(format(int(16*"1"+format(int(re.findall("[0-9,A-F]+",instr)[1],16),"016b"),2),"08X")+"\n")
+        instr=l[i]
+        i=i+1
         if(re.match(".memcheck[ ]?",instr.lower())):
             break
         print(instr)
         instr_list.append(instr)
-        if(re.match(".CALL[ ]?[(][ ]?[0-9,A-F]+[ ]?[)][ ]?",instr.upper())):
-            f.write(format(int(16*"1"+format(int(re.findall("[0-9,A-F]+",instr)[1],16),"016b"),2),"08X")+"\n")
-            instr=l[i]
-            i=i+1
-            if(re.match(".memcheck[ ]?",instr.lower())):
-                break
-            print(instr)
-            instr_list.append(instr)
-        if("#" in instr):
-            inst = re.split("#",instr)[0]
-            if(re.match("^[ ]*#",instr)):
-                continue
-        elif("/*" in instr):
-            inst = instr.split("/")[0]
-            if(re.match("^[/][*]",instr)):
-                while("*/" not in instr):
-                    time.sleep(.5)
-                    instr=l[i]
-                    instr_list.append(instr)
-                    print(instr,end='')
-                    i=i+1
-                continue
-        else:
-            inst = instr
-        if(len(instr)>2):
-            OpCode=Primary(inst)
-        else:
+    if("#" in instr):
+        inst = re.split("#",instr)[0]
+        if(re.match("^[ ]*#",instr)):
             continue
-        if("ERROR" in OpCode):
-            clear()
-            instr_list.pop()
-            for z in range(3,0,-1):
-                display(instr_list)
-                print(instr)
-                print(instr,end=" ")
-                print("contains error. Please re-enter")
-                print("You can re-enter in {} seconds".format(z))
-                time.sleep(1)
-                clear()
-            display(instr_list)
-            print("Faulty instruction : {}".format(instr))
-            instr = input()
-            clear()
-            display(instr_list)
-            i=i-1
-            l[i]=instr
-            rewrite=True
-        else:
-            f.write(format(int(OpCode,2),"08X"))
-            f.write("\n")
-        if("/*" in instr):
+    elif("/*" in instr):
+        inst = instr.split("/")[0]
+        if(re.match("^[/][*]",instr)):
             while("*/" not in instr):
                 time.sleep(.5)
                 instr=l[i]
                 instr_list.append(instr)
                 print(instr,end='')
                 i=i+1
+            continue
+    else:
+        inst = instr
+    if(len(inst)>2 and inst!=" " and inst!="\n" and inst!="\t" and inst!=""):
+        print(inst)
+        OpCode=Primary(inst)
+    else:
+        continue
+    if("ERROR" in OpCode):
+        clear()
+        instr_list.pop()
+        for z in range(3,0,-1):
+            display(instr_list)
+            print(instr)
+            print(instr,end=" ")
+            print("contains error. Please re-enter")
+            print("You can re-enter in {} seconds".format(z))
+            time.sleep(1)
+            clear()
+        display(instr_list)
+        print("Faulty instruction : {}".format(instr))
+        instr = input()
+        clear()
+        display(instr_list)
+        i=i-1
+        l[i]=instr
+        rewrite=True
+    else:
+        f.write(format(int(OpCode,2),"08X"))
+        f.write("\n")
+    if("/*" in instr):
+        while("*/" not in instr):
+            time.sleep(.5)
+            instr=l[i]
+            instr_list.append(instr)
+            print(instr,end='')
+            i=i+1
 print("\nOpcodes saved in pm_file.txt")                                                          #Changed
 f.close()
 g.close()
