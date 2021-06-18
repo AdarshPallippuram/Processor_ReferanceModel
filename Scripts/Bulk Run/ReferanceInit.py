@@ -3,6 +3,7 @@ import re
 import sys
 from ReferanceModel import Referance_Model
 import os
+from datetime import datetime
 from shutil import copyfile,rmtree
 from Assembler import Primary
 def assembler(INST_LOCATE):
@@ -74,73 +75,76 @@ def memchk(MEM_LOCATE):
             return 1
     except Exception as e:
         return 1
-file_count=0
-valid_count=0
-fail_afile=[]
-fail_mfile=[]
-cnfg = configparser.ConfigParser()
-cnfg.optionxform = str
-cnfg.read('Path.ini')
-if cnfg.has_section('PATHS'):
-    DIR=cnfg.get('PATHS','DIR',raw=True)
-    PM_LOCATE=cnfg.get('PATHS','PM_LOCATE',raw=True)
-    DM_LOCATE=cnfg.get('PATHS','DM_LOCATE',raw=True)
-    DMrdfl_LOCATE=cnfg.get('PATHS','DMrdfl_LOCATE',raw=True)
-    MEMfail_LOCATE=cnfg.get('PATHS','MEMfail_LOCATE',raw=True)
-else:
-    print("Error! PATHS configurations not found. Run Confiqure_Path.py.")
+if(__name__=="__main__"):
+    startTime = datetime.now()
+    file_count=0
+    valid_count=0
+    fail_afile=[]
+    fail_mfile=[]
+    cnfg = configparser.ConfigParser()
+    cnfg.optionxform = str
+    cnfg.read('Path.ini')
+    if cnfg.has_section('PATHS'):
+        DIR=cnfg.get('PATHS','DIR',raw=True)
+        PM_LOCATE=cnfg.get('PATHS','PM_LOCATE',raw=True)
+        DM_LOCATE=cnfg.get('PATHS','DM_LOCATE',raw=True)
+        DMrdfl_LOCATE=cnfg.get('PATHS','DMrdfl_LOCATE',raw=True)
+        MEMfail_LOCATE=cnfg.get('PATHS','MEMfail_LOCATE',raw=True)
+    else:
+        print("Error! PATHS configurations not found. Run Confiqure_Path.py.")
+        os.system('pause')
+        sys.exit()
+    if cnfg.has_section('IDENTIFIER'):
+        idntfr=cnfg.get('IDENTIFIER','idntfr',raw=True)
+    else:
+        print("Error! IDENTIFIER configurations not found. Run Confiqure_Path.py.")
+        os.system('pause')
+        sys.exit()
+    if cnfg.has_section('AVOID'):
+        avoid=cnfg.options('AVOID')
+    else:
+        print("Error! AVOID configurations not found. Run Confiqure_Path.py.")
+        os.system('pause')
+        sys.exit()
+    try:
+        rmtree(MEMfail_LOCATE)
+    except:
+        pass
+    os.makedirs(MEMfail_LOCATE)
+    a=[]
+    for root,directories,files in os.walk(DIR):
+            for name in files:	    
+                if not name in avoid:
+                    file_count+=1
+                    if assembler(os.path.join(root,name)):
+                        valid_count+=1
+                        print("File No. "+ str(file_count))
+                        print(os.path.join(root,name))
+                        if(name[0]==idntfr):
+                            copyfile("SAC/DMrd_files/{}".format(name),os.path.join("SAC","dm_file.txt"))
+                        else:
+                            h=open("SAC/dm_file.txt","wt")
+                            for i in range(65536):
+                                h.write(format(i,"04x")+"\txxxx\n")
+                            h.close()
+                        try:
+                            Referance_Model()
+                        except Exception as e:
+                            a.append(e)
+                        if(memchk(os.path.join(root,name))):
+                            fail_mfile.append(os.path.join(root,name))
+                            copyfile(DM_LOCATE,os.path.join(MEMfail_LOCATE,"DMfail_"+re.split(r'/|\\',os.path.join(root,name))[-2]+"_"+name))
+                            print("Mismatch in DM file")
+                        else:
+                            print("DM Files match")
+                        #os.remove("SAC/dm_file.txt")
+                        #os.remove("SAC/pm_file.txt")
+    print("{} No. out of {} files ran successfully".format(valid_count,file_count))
+    if(len(fail_mfile)): 
+        print("\n\nFailed Files due to memcheck data mismatch : ")#, *fail_mfile, sep="\n")
+        for i in range(len(fail_mfile)):
+            print(fail_mfile[i])
+    else:
+        print("\n\nAll tests successfully passed in MEMCHECK\n")
+    print("\n\nTime Analysis:\nStart time: {}\nStop Time: {}\nTime taken to execute the script: {}".format(startTime,datetime.now(),(datetime.now() - startTime)))
     os.system('pause')
-    sys.exit()
-if cnfg.has_section('IDENTIFIER'):
-    idntfr=cnfg.get('IDENTIFIER','idntfr',raw=True)
-else:
-    print("Error! IDENTIFIER configurations not found. Run Confiqure_Path.py.")
-    os.system('pause')
-    sys.exit()
-if cnfg.has_section('AVOID'):
-    avoid=cnfg.options('AVOID')
-else:
-    print("Error! AVOID configurations not found. Run Confiqure_Path.py.")
-    os.system('pause')
-    sys.exit()
-try:
-    rmtree(MEMfail_LOCATE)
-except:
-    pass
-os.makedirs(MEMfail_LOCATE)
-_o=True
-a=[]
-for root,directories,files in os.walk(DIR):	
-        for name in files:	    
-            if not name in avoid:
-                file_count+=1
-                if assembler(os.path.join(root,name)):
-                    valid_count+=1
-                    print("File No. "+ str(file_count))
-                    print(os.path.join(root,name))
-                    if(name[0]==idntfr):
-                        copyfile("SAC/DMrd_files/{}".format(name),os.path.join("SAC","dm_file.txt"))
-                    else:
-                        h=open("SAC/dm_file.txt","wt")
-                        for i in range(65536):
-                            h.write(format(i,"04x")+"\txxxx\n")
-                        h.close()
-                    try:
-                        Referance_Model()
-                    except Exception as e:
-                        a.append(e)
-                    if(memchk(os.path.join(root,name))):
-                        fail_mfile.append(os.path.join(root,name))
-                        copyfile(DM_LOCATE,os.path.join(MEMfail_LOCATE,"DMfail_"+re.split(r'/|\\',os.path.join(root,name))[-2]+"_"+name))
-                        print("Mismatch in DM file")
-                    else:
-                        print("DM Files match")
-                    #os.remove("SAC/dm_file.txt")
-                    #os.remove("SAC/pm_file.txt")
-print("{} No. out of {} files ran successfully".format(valid_count,file_count))
-if(len(fail_mfile)): 
-    print("\n\nFailed Files due to memcheck data mismatch : ")#, *fail_mfile, sep="\n")
-    for i in range(len(fail_mfile)):
-        print(fail_mfile[i])
-else:
-    print("\n\nAll tests successfully passed in MEMCHECK\n")
