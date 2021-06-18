@@ -354,9 +354,6 @@ def multi(op):
             elif(op[17:]=="10"): #rn = mr2
                 rn = 8*mr2[0]+mr2
         elif(op[2]=="1" and op[17:]!="11"):
-            mr0=16*"0"
-            mr1=16*"0"
-            mr2=8*"0"
             if(op[17:]=="00"):
                 mr0 =get_from_reg(Rx)
             elif(op[17:]=="01"):
@@ -404,20 +401,6 @@ def multi(op):
             mrf1=unsigned_mul(rx,ry)
         else:                               #signed multiplication
             mrf1=signed_mul(rx,ry,op[4],op[3])
-        if(op[5]=="1" and op[6]=="1"):
-            if(mrf1[-16]=="0"):
-                mrf1=mrf1[-40:-16]+16*"0"
-            else:
-                if("1" not in mrf1[-15:]):
-                    mrf1=mrf1[-40:-16]
-                    if(mrf[-1]=="0"):
-                        mrf1=mrf1+16*"0"
-                    else:
-                        n=len(mrf1.split("0")[-1])
-                        mrf1=mrf1[-24:-1-n]+"1"+n*"0"+16*"0"
-                else:
-                    mrf1=mrf1[-40:-16]
-                    mrf1=format(int(mrf1,2)+1,"024b")+16*"0"
         if(op[0:2]=="10"):   # mr+rx*ry
             val=0
             if(op[5]=="1"):
@@ -462,6 +445,20 @@ def multi(op):
                 mrf1 = format(mrf1,'040b')
             if(mrf1[0]=="-"):
                 mrf1=compliment(mrf1)
+        if(op[5]=="1" and op[6]=="1"):
+            if(mrf1[-16]=="0"):
+                mrf1=mrf1[-40:-16]+16*"0"
+            else:
+                if("1" not in mrf1[-15:]):
+                    mrf1=mrf1[-40:-16]
+                    if(mrf[-1]=="0"):
+                        mrf1=mrf1+16*"0"
+                    else:
+                        n=len(mrf1.split("0")[-1])
+                        mrf1=mrf1[-24:-1-n]+"1"+n*"0"+16*"0"
+                else:
+                    mrf1=mrf1[-40:-16]
+                    mrf1=format(int(mrf1,2)+1,"024b")+16*"0"
         u_or_s=int(op[3])|int(op[4])
         if(int(op[3])|int(op[4])==1):
             if(mrf1[0:8]=="11111111"):
@@ -677,6 +674,7 @@ def condition(a):
 #---------------------------------------------------------------------------
 def Referance_Model():
     global reg_bank
+    global mrf
     reg_bank = {
         "R":{"0000":"XXXX","0001":"XXXX","0010":"XXXX","0011":"XXXX","0100":"XXXX","0101":"XXXX","0110":"XXXX","0111":"XXXX","1000":"XXXX","1001":"XXXX","1010":"XXXX","1011":"XXXX","1100":"XXXX","1101":"XXXX","1110":"XXXX","1111":"XXXX"},
         "I":{"0000":"XXXX","0001":"XXXX","0010":"XXXX","0011":"XXXX","0100":"XXXX","0101":"XXXX","0110":"XXXX","0111":"XXXX","1000":"XXXX","1001":"XXXX","1010":"XXXX","1011":"XXXX","1100":"XXXX","1101":"XXXX","1110":"XXXX","1111":"XXXX"},
@@ -684,6 +682,7 @@ def Referance_Model():
         "0110":{"0000":"0000000000000000","0001":"0000000000000000","0011":"0000000000000000","0100":"XXXX","0101":"0000000000000000"},
         "0111":{"1011":"0000000000000000","1100":"0000000000000000","1110":"0000000000000001"}
     }
+    mrf="0000000000000000000000000000000000000000"
     f=open(path+"/pm_file.txt","rt")
     l=[]
     u=False
