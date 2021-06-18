@@ -403,17 +403,25 @@ def multi(op):
             mrf1=signed_mul(rx,ry,op[4],op[3])
         if(op[0:2]=="10"):   # mr+rx*ry
             val=0
+            val1=0
+            if(int(op[3])|int(op[4])==1 and op[5:7]=="11"):
+                val=-1
+                val1=1
             if(op[5]=="1"):
                 mrf1=fbin_to_decimal(mrf,int(op[3])|int(op[4]))+fbin_to_decimal(mrf1,int(op[3])|int(op[4]))
                 if(mrf1<(-1)):
                     if(int(op[3])|int(op[4])==1):
                         val=int("ff80000000",16)
                     mrf1=mrf1+1
+                if(mrf1>2):
+                    if(int(op[3])|int(op[4])==1):
+                        val=int("007fffffff",16)
+                    mrf1=mrf1-1
                 if(mrf1>1):
                     if(int(op[3])|int(op[4])==1):
                         val=int("007fffffff",16)
                     mrf1=mrf1-1
-                mrf1=format(val+int(decimal_to_fbin(mrf1,int(op[3])|int(op[4])),2),"040b")[-40:]
+                mrf1=format(val+int(decimal_to_fbin(mrf1,int(op[3])|int(op[4])),2)+val1,"040b")[-40:]
                 if((mrf[:8]!=mrf1[:8]) and (u_or_s == 1) and (int(op[3])|int(op[4])==0)):
                     mrf1=mrf[:8]+mrf1[8:]
             elif(op[3:5]=="00"): 
@@ -580,17 +588,8 @@ def primary(OpCode):
             multi(OpCode[8:27])
         else:
             shifter(OpCode[9:27])
-    elif int(OpCode[2:6]) == 1:                                                                 #IF condition ureg1 = ureg2
-        if(OpCode[8:16]=="01100100"):                                                           #PCSTK = ureg
-            if(int(get_from_reg("01111110"))==1):
-                put_to_reg('01100100',get_from_reg(OpCode[16:24]))
-                put_to_reg("01111110",format(2,"016b"))
-                put_to_reg("01100101",format(1,"016b"))     #PCSTKP
-            else:
-                put_to_reg("01100101","000001001")           #PCSTKP
-                put_to_reg("01111110",format(4,"016b"))
-        else:                                                                                   #ureg1(other than PCSTK) = ureg2
-            put_to_reg(OpCode[8:16],get_from_reg(OpCode[16:24]))
+    elif int(OpCode[2:6]) == 1:                                                                 #IF condition ureg1 = ureg2                                                                                 #ureg1(other than PCSTK) = ureg2
+        put_to_reg(OpCode[8:16],get_from_reg(OpCode[16:24]))
     elif int(OpCode[2:6]) == 1001:                                                              #IF condition DM(Ia,Mb) <-> ureg
         i_data=get_from_reg("00010"+OpCode[19:22])
         if(i_data!="XXXX"):
@@ -683,51 +682,59 @@ def Referance_Model():
         "0111":{"1011":"0000000000000000","1100":"0000000000000000","1110":"0000000000000001"}
     }
     mrf="0000000000000000000000000000000000000000"
+    count = 0
     f=open(path+"/pm_file.txt","rt")
-    l=[]
+    l={}
     u=False
     for i in f:
         i=hex_to_ubin(i.strip("\n"))
-        if(i[:16]!="1"*16):
-            l.append(i.strip("\n"))
+        if(i[:16]=="1"*16):
+            a=int(i[16:],2)
+            continue
+        l[a]=i
+        a+=1
     i=0
-    while(i<len(l)):
+    while(l[i]!="00000000010000000000000000000000"):
         jump=False
+        if(count==512):
+            break
         if(l[i][0]=="0"):
             s=1
         else:
             s=condition(l[i][27:])
         if(s==1):
-            if int(l[i][:8]) == 1:
-                if(int(get_from_reg("01111110"))==1):
-                    i=get_from_reg("01100100")
-                    put_to_reg('01100100',"XXXX")
+            if int(l[i][:8]) == 1:                                                      #rts
+                if(int(get_from_reg("01111110"))==10):                                  #changed from 1 to 10
+                    i=int(get_from_reg("01100100"),2)
                     put_to_reg("01111110",format(1,"016b"))
                     put_to_reg("01100101",format(0,"016b"))     #PCSTKP
             if int(l[i][3:6]) == 100:                                                   #IF condition JUMP (Md,Ic)
                 jump=True
-                M=int(get_from_reg("00101"+l[i][22:25]),2)
-                I=int(get_from_reg("00011"+l[i][19:22]),2)
-                i=I+M
-                put_to_reg("01100000",format(i,"016b"))     #FADDR
+                M=get_from_reg("00101"+l[i][22:25])
+                I=get_from_reg("00011"+l[i][19:22])
+                if(M!="XXXX" and I!="XXXX"):
+                    i=int(I,2)+int(M,2)
+                    put_to_reg("01100000",format(i,"016b"))     #FADDR
             if int(l[i][3:6]) == 101:                                                   #IF condition CALL (Md,Ic)
                 jump=True
-                M=int(get_from_reg("00101"+l[i][22:25]),2)
-                I=int(get_from_reg("00011"+l[i][19:22]),2)
-                if(int(get_from_reg("01111110"))==1):
+                M=get_from_reg("00101"+l[i][22:25])
+                I=get_from_reg("00011"+l[i][19:22])
+                if(int(get_from_reg("01111110"))==1 and I!="XXXX" and M!="XXXX"):
                     put_to_reg("01100100",format(i+1,"016b"))     #PCSTK
-                    i=I+M
+                    i=int(I,2)+int(M,2)
                     put_to_reg("01100000",format(i,"016b"))     #FADDR
                     put_to_reg("01111110",format(2,"016b"))
                     put_to_reg("01100101",format(1,"016b"))     #PCSTKP
                 else:
                     put_to_reg("01111110",format(4,"016b"))
             if((jump==False) or ((jump==True) and (i<len(l)))):
-                if(i<len(l)-1):
+                count+=1
+                if(l[i+1]!="00000000010000000000000000000000"):
                     put_to_reg("01100000",format(i+1,"016b"))   #FADDR
                     put_to_reg("01100001",format(i,"016b"))     #DADDR  
                 put_to_reg("01100011",format(i-1,"016b"))         #PC
                 primary(l[i])
             else:
+                count+=1
                 continue
         i=i+1
