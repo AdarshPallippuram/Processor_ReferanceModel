@@ -3,7 +3,6 @@ import re
 import sys
 from ReferanceModel import Referance_Model
 import os
-import re
 from shutil import copyfile,rmtree
 from Assembler import Primary
 def assembler(INST_LOCATE):
@@ -110,6 +109,7 @@ except:
     pass
 os.makedirs(MEMfail_LOCATE)
 _o=True
+a=[]
 for root,directories,files in os.walk(DIR):	
         for name in files:	    
             if not name in avoid:
@@ -125,7 +125,10 @@ for root,directories,files in os.walk(DIR):
                         for i in range(65536):
                             h.write(format(i,"04x")+"\txxxx\n")
                         h.close()
-                    Referance_Model()
+                    try:
+                        Referance_Model()
+                    except Exception as e:
+                        a.append(e)
                     if(memchk(os.path.join(root,name))):
                         fail_mfile.append(os.path.join(root,name))
                         copyfile(DM_LOCATE,os.path.join(MEMfail_LOCATE,"DMfail_"+re.split(r'/|\\',os.path.join(root,name))[-2]+"_"+name))
@@ -136,6 +139,8 @@ for root,directories,files in os.walk(DIR):
                     #os.remove("SAC/pm_file.txt")
 print("{} No. out of {} files ran successfully".format(valid_count,file_count))
 if(len(fail_mfile)): 
-    print("\n\nFailed Files due to memcheck data mismatch : ", *fail_mfile, sep="\n")
+    print("\n\nFailed Files due to memcheck data mismatch : ")#, *fail_mfile, sep="\n")
+    for i in range(len(fail_mfile)):
+        print(fail_mfile[i])
 else:
     print("\n\nAll tests successfully passed in MEMCHECK\n")
