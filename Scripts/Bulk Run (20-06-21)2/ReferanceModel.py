@@ -684,7 +684,7 @@ def Referance_Model(argument):
         "0111":{"1011":"0000000000000000","1100":"0000000000000000","1110":"0000000000000001"}
     }
     mrf="0000000000000000000000000000000000000000"
-    count = 0
+    cycles = -4
     f=open(path+"/pm_file.txt","rt")
     l={}
     u=False
@@ -698,7 +698,10 @@ def Referance_Model(argument):
     i=0
     while(l[i]!="00000000010000000000000000000000"):
         jump=False
-        if(count==512):
+        if(cycles>1023): #416
+            break
+        cycles+=1
+        if(int(get_from_reg("01111110"))==100):
             break
         if(l[i][0]=="0"):
             s=1
@@ -710,6 +713,7 @@ def Referance_Model(argument):
                     i=int(get_from_reg("01100100"),2)
                     put_to_reg("01111110",format(1,"016b"))
                     put_to_reg("01100101",format(0,"016b"))     #PCSTKP
+                    cycles+=3
             if int(l[i][3:6]) == 100:                                                   #IF condition JUMP (Md,Ic)
                 jump=True
                 M=get_from_reg("00101"+l[i][22:25])
@@ -717,6 +721,7 @@ def Referance_Model(argument):
                 if(M!="XXXX" and I!="XXXX"):
                     i=int(I,2)+int(M,2)
                     put_to_reg("01100000",format(i,"016b"))     #FADDR
+                    cycles+=3
             if int(l[i][3:6]) == 101:                                                   #IF condition CALL (Md,Ic)
                 jump=True
                 M=get_from_reg("00101"+l[i][22:25])
@@ -727,21 +732,21 @@ def Referance_Model(argument):
                     put_to_reg("01100000",format(i,"016b"))     #FADDR
                     put_to_reg("01111110",format(2,"016b"))
                     put_to_reg("01100101",format(1,"016b"))     #PCSTKP
+                    cycles+=3
                 else:
                     put_to_reg("01111110",format(4,"016b"))
             if((jump==False) or ((jump==True) and (i<len(l)))):
-                count+=1
                 if(l[i+1]!="00000000010000000000000000000000"):
                     put_to_reg("01100000",format(i+1,"016b"))   #FADDR
                     put_to_reg("01100001",format(i,"016b"))     #DADDR  
                 put_to_reg("01100011",format(i-1,"016b"))         #PC
+                #print("{}:{}".format(i,l[i]))
                 primary(l[i])
             else:
-                count+=1
                 continue
         i=i+1
-    if(int(get_from_reg("0111110"))==100):
+    if(int(get_from_reg("01111110"))==100):
         primary(l[i])
     return(dm_file)
-#l={}
-#print(Referance_Model(l))
+# l={}
+# print(Referance_Model(l))
