@@ -1,7 +1,7 @@
 import configparser
 import re
 import sys
-from ReferanceModel import Referance_Model, primary
+from ReferanceModel import Referance_Model
 import os
 from datetime import datetime
 from shutil import rmtree
@@ -88,13 +88,17 @@ def memchk(MEM_LOCATE,dm_file):
     tlines = [line.replace(' ', '').replace('\t','').strip() for line in mem_file.readlines()]
     try:
         slines=list(filter(check,[x.lower() for x in tlines[[line.lower() for line in tlines].index(find)+1:]]))
-        if(not len(set(slines)-set(dm_file))): # change to (slines==dm_file): only checks if one list is empty
+        if("" in slines):
+            slines.remove("")
+        # print(slines)
+        # print(dm_file)
+        if(not len(set(slines)-set(dm_file))):# and not len(set(dm_file)-set(slines))):
             return 0
         else:
             return 1
     except Exception as e:
         return 1
-@profile
+#@profile
 def main():
     global PM_LOCATE
     global DM_LOCATE
@@ -140,24 +144,27 @@ def main():
                     file_count+=1
                     if assembler(os.path.join(root,name)):
                         valid_count+=1
-                        print("File No. "+ str(file_count))
-                        print(os.path.join(root,name))
+                        #print("File No. "+ str(file_count))
+                        #print(os.path.join(root,name))
                         l={}
                         if(name[0]==idntfr):
                            f=open(os.path.join(DMrdfl_LOCATE,name),"r")
                            a=f.readlines()
                            f.close()
                            for i in range(len(a)):
+                               a[i]=a[i].replace(' ', '').replace('\t','').replace('\n','').strip()
                                if("xxxx" not in a[i]):
-                                   l[a[i][0:4]]=a[i][5:9]
-                        a=[]
+                                   l[a[i][0:4]]=a[i][4:8]
+                        b=[]
                         try:
                             l=Referance_Model(l)
                         except:
                             pass
                         for i in l:
-                            a.append(i+l[i])
-                        if(memchk(os.path.join(root,name),a)):
+                            b.append(i+l[i])
+                            if(name[0]==idntfr):
+                                b=list(set(b)-set(a))
+                        if(memchk(os.path.join(root,name),b)):
                             fail_mfile.append(os.path.join(root,name))
                             f=open(os.path.join(MEMfail_LOCATE,"DMfail_"+re.split(r'/|\\',os.path.join(root,name))[-2]+"_"+name),"w")
                             for i in range(65536):
@@ -169,8 +176,6 @@ def main():
                             #print("Mismatch in DM file")
                         #else:
                             #print("DM Files match")
-                        #os.remove("SAC/dm_file.txt")
-                        #os.remove("SAC/pm_file.txt")
     print("{} No. out of {} files ran successfully".format(valid_count,file_count))
     if(len(fail_mfile)): 
         print("\n\nFailed Files due to memcheck data mismatch : ")#, *fail_mfile, sep="\n")
